@@ -21,6 +21,7 @@ test_sources = [
 ]
 
 requires = [
+    "zakat",
 ]
 test_requires = [
     "pytest",
