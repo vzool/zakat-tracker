@@ -12,6 +12,8 @@ android:
 	briefcase create android
 	cp -r publish/android/ build/zakat-tracker/android/gradle/app/src/main/res/
 	briefcase update android --update-resources
+	git stash
+	git checkout main
 	briefcase build android
 	cp build/zakat-tracker/android/gradle/app/build/outputs/apk/debug/app-debug.apk dist/zakat-tracker.apk
 
