@@ -45,6 +45,9 @@ translations = {
     # account_table_on_activate
     'table_account_access_key': 'account',
 
+    # exchange_form
+    'exchange_form_label': 'Add exchange rate form',
+
     # transfer_form
     'financial_transfer_form': 'Financial Transfer Form',
     'from_account': 'From Account',
@@ -73,6 +76,9 @@ translations = {
 
     # amount_widget
     'amount': 'Amount',
+
+    # rate_widget
+    'rate': 'Rate',
 
     # datetime_widget
     'datetime_widget_label': 'Date and timing of the operation',

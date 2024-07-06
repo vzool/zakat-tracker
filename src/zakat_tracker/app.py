@@ -147,11 +147,11 @@ class ZakatLedger(toga.App):
             style=Pack(flex=1, text_direction=self.dir),
         )
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
-        tabs_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        tabs_page.add(back_button)
-        tabs_page.add(tabs)
+        self.account_tabs = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        self.account_tabs.add(tabs)
+        self.account_tabs.add(back_button)
 
-        self.main_window.content = tabs_page
+        self.main_window.content = self.account_tabs
 
     def boxes_page(self, widget, account):
         print('boxes_page', account)
@@ -200,6 +200,12 @@ class ZakatLedger(toga.App):
         print('exchanges_page', account)
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
+        add_button = toga.Button(
+            self.i18n.t('add'),
+            on_press=lambda e: self.exchange_form(widget, account),
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+
         # id, rate, description
         self.exchanges = toga.Table(
             headings=[
@@ -213,6 +219,7 @@ class ZakatLedger(toga.App):
         )
 
         page.add(self.account_tab_page_label_widget(account))
+        page.add(add_button)
         page.add(self.exchanges)
         return page
 
@@ -232,7 +239,7 @@ class ZakatLedger(toga.App):
         if not account in exchanges:
             exchange = self.db.exchange(account)
             return [(ZakatTracker.time_to_datetime(ZakatTracker.time()), exchange['rate'], exchange['description'])]
-        return [(ZakatTracker.time_to_datetime(k), v['rate'], v['description']) for k,v in sorted(exchanges.items(), reverse=True)]
+        return [(ZakatTracker.time_to_datetime(k), v['rate'], v['description']) for k,v in sorted(exchanges[account].items(), reverse=True)]
 
     def accounts_selection_items(self):
         return [""] + [ f'{k} ({v})' for k,v in sorted(self.db.accounts().items())]
@@ -299,6 +306,41 @@ class ZakatLedger(toga.App):
         self.account_select.value = ''
 
     # forms
+
+    def exchange_form(self, widget, account):
+        print('exchange_form', account)
+        form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+
+        # header
+
+        form_label = toga.Label(self.i18n.t('exchange_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
+        # form order
+
+        form.add(form_label)
+        form.add(toga.Divider())
+        form.add(self.readonly_account_widget(account))
+        form.add(toga.Divider())
+        form.add(self.rate_widget())
+        form.add(toga.Divider())
+        form.add(self.desc_widget())
+        form.add(toga.Divider())
+        form.add(self.datetime_widget())
+        form.add(toga.Divider())
+
+        def cancel(widget):
+            self.main_window.content = self.account_tabs
+        footer = toga.Box(style=Pack(direction=ROW, padding=5, text_direction=self.dir))
+        cancel_button = toga.Button(self.i18n.t('cancel'), on_press=cancel, style=Pack(flex=1, text_direction=self.dir))
+        save_button = toga.Button(self.i18n.t('save'), on_press=lambda e: self.exchange(widget, account), style=Pack(flex=1, text_direction=self.dir))
+
+        footer.add(cancel_button)
+        footer.add(save_button)
+
+        form.add(footer)
+        form.add(toga.Divider())
+
+        self.main_window.content = toga.ScrollContainer(content=form, style=Pack(text_direction=self.dir))
 
     def transfer_form(self, widget):
         print('transfer_form')
@@ -417,8 +459,46 @@ class ZakatLedger(toga.App):
         print('cancel')
         self.main_window.content = self.main_box
 
-    def update(self, widget):
+    def update_accounts(self, widget):
         self.accounts.data = self.accounts_table_items()
+    
+    def update_exchanges(self, widget, account):
+        self.exchanges.data = self.exchanges_table_items(account)
+
+    def exchange(self, widget, account):
+        print('exchange', account)
+        rate = self.rate_input.value
+        desc = self.desc_input.value
+        year = int(self.year_input.value)
+        month = int(self.month_input.value)
+        day = int(self.day_input.value)
+        hour = int(self.hour_input.value)
+        minute = int(self.minute_input.value)
+        second = int(self.second_input.value)
+        datetime_value = datetime(year, month, day, hour, minute, second)
+        print(f'rate: {rate}')
+        print(f'desc: {desc}')
+        print(f'datetime: {datetime_value}')
+        if not rate or not desc or not year or not month or not day or not hour or not minute or not second:
+            self.main_window.error_dialog(
+                self.i18n.t('data_error'),
+                self.i18n.t('all_fields_required_message'),
+            )
+            return
+        try:
+            self.db.exchange(account, created=ZakatTracker.time(datetime_value), rate=rate, description=desc, debug=True)
+            self.update_exchanges(widget, account)
+            self.main_window.content = self.account_tabs
+            self.main_window.info_dialog(
+                self.i18n.t('operation_accomplished_successfully'),
+                self.i18n.t('message_status'),
+            )
+            print('6')
+        except Exception as e:
+            self.main_window.error_dialog(
+                self.i18n.t('an_error_occurred'),
+                str(e),
+            )
 
     def save(self, widget):
         print('save')
@@ -449,7 +529,7 @@ class ZakatLedger(toga.App):
                 self.db.sub(amount, desc, account, created=ZakatTracker.time(datetime_value))
             else:
                 self.db.track(amount, desc, account, created=ZakatTracker.time(datetime_value))
-            self.update(widget)
+            self.update_accounts(widget)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
                 self.i18n.t('operation_accomplished_successfully'),
@@ -495,7 +575,7 @@ class ZakatLedger(toga.App):
         try:
             self.db.transfer(amount, from_account, to_account, desc, created=ZakatTracker.time(datetime_value))
             self.db.free(self.db.lock()) # !!! need-revise: update zakat library, it should be auto freed.
-            self.update(widget)
+            self.update_accounts(widget)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
                 self.i18n.t('operation_accomplished_successfully'),
@@ -533,6 +613,24 @@ class ZakatLedger(toga.App):
         amount_box.add(amount_label)
         amount_box.add(self.amount_input)
         return amount_box
+
+    def rate_widget(self):
+        # rate
+        rate_label = toga.Label(self.i18n.t('rate'), style=Pack(padding=(0, 5), text_direction=self.dir))
+        self.rate_input = toga.NumberInput(min=0.01, step=0.01, style=Pack(flex=1, text_direction=self.dir))
+        rate_box = toga.Box(style=Pack(direction=ROW, padding=5, text_direction=self.dir))
+        rate_box.add(rate_label)
+        rate_box.add(self.rate_input)
+        return rate_box
+    
+    def readonly_account_widget(self, account):
+        # account
+        account_label = toga.Label(self.i18n.t('account'), style=Pack(padding=(0, 5), text_direction=self.dir))
+        account_input = toga.TextInput(value=account, readonly=True, style=Pack(flex=1, text_direction=self.dir))
+        account_box = toga.Box(style=Pack(direction=ROW, padding=5, text_direction=self.dir))
+        account_box.add(account_label)
+        account_box.add(account_input)
+        return account_box
 
     def datetime_widget(self):
         now = datetime.now()

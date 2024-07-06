@@ -45,6 +45,9 @@ translations = {
     # account_table_on_activate
     'table_account_access_key': 'الحساب',
 
+    # exchange_form
+    'exchange_form_label': 'نموذج إضافة سعر صرف',
+
     # transfer_form
     'financial_transfer_form': 'نموذج التحويل المالي',
     'from_account': 'من الحساب',
@@ -73,6 +76,9 @@ translations = {
 
     # amount_widget
     'amount': 'المبلغ',
+
+    # rate_widget
+    'rate': 'المعدل',
 
     # datetime_widget
     'datetime_widget_label': 'تاريخ وتوقيت العملية',
