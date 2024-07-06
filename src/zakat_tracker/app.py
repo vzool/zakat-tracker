@@ -10,17 +10,41 @@ from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
 from zakat import ZakatTracker
 from datetime import datetime
+from .i18n import i18n, Lang
+from .config import Config
+import pathlib
 
 class ZakatLedger(toga.App):
     def startup(self):
 
         self.icon = toga.Icon.APP_ICON
 
+        # set database
+
         if not os.path.exists(self.paths.data):
-            os.makedirs(self.paths.data)
-        path = f'{self.paths.data}/zakat.pickle'
-        print(f'db: {path}')
-        self.db = ZakatTracker(path)
+            pathlib.Path.mkdir(self.paths.data)
+        db_path = os.path.join(self.paths.data, 'zakat.pickle')
+        print(f'db: {db_path}')
+        self.db = ZakatTracker(db_path)
+
+        # load config
+
+        if not os.path.exists(self.paths.config):
+            pathlib.Path.mkdir(self.paths.config)
+        config_path = os.path.join(self.paths.config, 'config.json')
+        print(f'config: {config_path}')
+        self.config = Config(config_path)
+        
+        # set translations
+
+        if not os.path.exists(config_path):
+            self.i18n = i18n(Lang.AR_EN)
+            self.config.set('lang', Lang.AR_EN.value)
+        else:
+            self.i18n = i18n(Lang(self.config.get('lang')))
+
+        self.dir = self.i18n.t('dir', 'rtl')
+        self.text_align = self.i18n.t('text_align', 'right')
 
         # logo_view = toga.ImageView(id="view", image="resources/zakat_tracker_logo.png")
         # logo_view.style.padding = 120
@@ -28,34 +52,79 @@ class ZakatLedger(toga.App):
         # self.main_box.add(logo_view)
 
         self.main_window = toga.MainWindow(
-            title=f'متتبع الزكاة ({self.formal_name})',
+            title=self.i18n.t('formal_name'),
             size=(800, 600),
         )
-        self.accounts_page()
+        self.main_tabs_page()
         self.main_window.show()
     
     # pages
 
+    def main_tabs_page(self):
+        print('main_tabs_page')
+        self.main_box = toga.OptionContainer(
+            content=[
+                (self.i18n.t('accounts'), self.accounts_page()),
+                (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("pasta")),
+                (self.i18n.t('settings'), self.settings_page()),
+            ],
+            style=Pack(text_direction=self.dir),
+        )
+        self.main_window.content = self.main_box
+
+    def zakat_page(self):
+        print('zakat_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        page_label = toga.Label(self.i18n.t('zakat'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        page.add(page_label)
+        return page
+
+    def settings_page(self):
+        print('settings_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+
+        # lang
+        lang_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        lang_label = toga.Label(self.i18n.t('language'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        lang_selection = toga.Selection(
+            items=[lang.value for lang in Lang],
+            value=self.config.get('lang', Lang.AR_EN.value),
+            on_change=lambda e: self.config.set('lang', e.value),
+            style=Pack(text_direction=self.dir)
+        )
+        lang_note = toga.Label(self.i18n.t('lang_note'), style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        lang_box.add(lang_label)
+        lang_box.add(lang_selection)
+        lang_box.add(lang_note)
+
+        page.add(lang_box)
+        return page
+
     def accounts_page(self):
         print('accounts_page')
-        accounts_box = toga.Box(style=Pack(direction=COLUMN, flex=1))
+        accounts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         add_button = toga.Button(
-            "إضافة (Add)",
+            self.i18n.t('add'),
             on_press=self.form,
-            style=Pack(flex=1),
+            style=Pack(flex=1, text_direction=self.dir),
         )
         transfer_button = toga.Button(
-            "تحويل (Transfer)",
+            self.i18n.t('transfer'),
             on_press=self.transfer_form,
-            style=Pack(flex=1),
+            style=Pack(flex=1, text_direction=self.dir),
         )
         self.accounts = toga.Table(
-            headings=["الحساب (Account)", "الرصيد (Balance)", "صندوق (Box)", "حركة (Log)"],
+            headings=[
+                self.i18n.t('account'),
+                self.i18n.t('balance'),
+                self.i18n.t('box'),
+                self.i18n.t('log'),
+            ],
             data=self.accounts_table_items(),
             on_select=self.account_table_on_select,
             on_activate=self.account_table_on_activate,
             missing_value="-",
-            style=Pack(flex=1),
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
         )
 
         accounts_box.add(toga.Box(
@@ -63,39 +132,89 @@ class ZakatLedger(toga.App):
                 add_button, 
                 transfer_button,
             ],
-            style=Pack(direction=ROW, padding=5),
+            style=Pack(direction=ROW, padding=5, text_direction=self.dir),
         ))
         accounts_box.add(self.accounts)
-        self.main_box = toga.OptionContainer(
+        return accounts_box
+
+    def account_tabs_page(self, widget, account):
+        tabs = toga.OptionContainer(
             content=[
-                ("الحسابات (Accounts)", accounts_box),
-                ("الزكاة (Zakat)", toga.Box(), toga.Icon("pasta")),
-                ("التاريخ (History)", toga.Box()),
+                (self.i18n.t('boxes'), self.boxes_page(widget, account)),
+                (self.i18n.t('logs'), self.logs_page(widget, account), toga.Icon("pasta")),
+                (self.i18n.t('exchanges'), self.exchanges_page(widget, account)),
             ],
+            style=Pack(flex=1, text_direction=self.dir),
         )
-        self.main_window.content = self.main_box
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
+        tabs_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        tabs_page.add(back_button)
+        tabs_page.add(tabs)
+
+        self.main_window.content = tabs_page
 
     def boxes_page(self, widget, account):
         print('boxes_page', account)
-        page = toga.Box(style=Pack(direction=COLUMN, flex=1))
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
-        page_label = toga.Label(f'صناديق [{account}] Boxes of ', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10))
-
-        # id, capital, count, last, rest, total 
+        # id, capital, count, last, rest, total
         self.boxes = toga.Table(
-            headings=["X", "المتبقي (Rest)", "راس المال (Capital)", "العدد (Count)", "آخر زكاة (Last)", "الإجمالي (Total)"],
+            headings=[
+                self.i18n.t('date'),
+                self.i18n.t('rest'),
+                self.i18n.t('capital'),
+                self.i18n.t('count'),
+                self.i18n.t('last'),
+                self.i18n.t('total'),
+            ],
             data=self.boxes_table_items(account),
             missing_value="-",
-            style=Pack(flex=1),
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
         )
 
-        back_button = toga.Button("رجوع (Back)", on_press=self.cancel, style=Pack(flex=1))
-
-        page.add(page_label)
+        page.add(self.account_tab_page_label_widget(account))
         page.add(self.boxes)
-        page.add(back_button)
+        return page
 
-        self.main_window.content = toga.ScrollContainer(content=page)
+    def logs_page(self, widget, account):
+        print('logs_page', account)
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+
+        # id, value, desc
+        self.logs = toga.Table(
+            headings=[
+                self.i18n.t('date'),
+                self.i18n.t('value'),
+                self.i18n.t('desc'),
+            ],
+            data=self.logs_table_items(account),
+            missing_value="-",
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
+        )
+
+        page.add(self.account_tab_page_label_widget(account))
+        page.add(self.logs)
+        return page
+
+    def exchanges_page(self, widget, account):
+        print('exchanges_page', account)
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+
+        # id, rate, description
+        self.exchanges = toga.Table(
+            headings=[
+                self.i18n.t('date'),
+                self.i18n.t('rate'),
+                self.i18n.t('desc'),
+            ],
+            data=self.exchanges_table_items(account),
+            missing_value="-",
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
+        )
+
+        page.add(self.account_tab_page_label_widget(account))
+        page.add(self.exchanges)
+        return page
 
     # generators
 
@@ -103,7 +222,17 @@ class ZakatLedger(toga.App):
         return [(k, v, self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items()]
 
     def boxes_table_items(self, account: str):
-        return [(k, v['rest'], v['capital'], v['count'], v['last'], v['total']) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
+        return [(ZakatTracker.time_to_datetime(k), v['rest'], v['capital'], v['count'], v['last'], v['total']) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
+
+    def logs_table_items(self, account: str):
+        return [(ZakatTracker.time_to_datetime(k), v['value'], v['desc']) for k,v in sorted(self.db.logs(account).items(), reverse=True)]
+
+    def exchanges_table_items(self, account: str):
+        exchanges = self.db.exchanges()
+        if not account in exchanges:
+            exchange = self.db.exchange(account)
+            return [(ZakatTracker.time_to_datetime(ZakatTracker.time()), exchange['rate'], exchange['description'])]
+        return [(ZakatTracker.time_to_datetime(k), v['rate'], v['description']) for k,v in sorted(exchanges.items(), reverse=True)]
 
     def accounts_selection_items(self):
         return [""] + [ f'{k} ({v})' for k,v in sorted(self.db.accounts().items())]
@@ -136,8 +265,11 @@ class ZakatLedger(toga.App):
         print('account_table_on_select', widget.selection)
 
     def account_table_on_activate(self, widget, row: toga.sources.list_source.Row):
-        print('account_table_on_activate', row.الحساب_account)
-        self.boxes_page(widget, row.الحساب_account)
+        access_key = self.i18n.t('table_account_access_key')
+        print('account_table_on_activate', f'access_key({access_key})')
+        account = getattr(row, access_key)
+        print('account_table_on_activate', account)
+        self.account_tabs_page(widget, account)
 
     def account_select_on_change(self, widget):
         print('account_select_on_change', widget.value)
@@ -171,41 +303,42 @@ class ZakatLedger(toga.App):
     def transfer_form(self, widget):
         print('transfer_form')
 
-        transfer_form = toga.Box(style=Pack(direction=COLUMN, flex=1))
+        transfer_form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
         # header
 
-        form_label = toga.Label("نموذج التحويل المالي (Financial Transfer Form)", style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10))
+        form_label = toga.Label(self.i18n.t('financial_transfer_form'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         accounts = self.accounts_selection_items()
 
         # from_account
-        from_account_box = toga.Box(style=Pack(direction=COLUMN))
+        from_account_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir))
         self.from_account_select = toga.Selection(
             items=accounts,
             on_change=self.from_account_select_on_change,
         )
-        from_account_label = toga.Label("من الحساب (From Account)", style=Pack(padding=(0, 5), text_align='center', font_weight='bold'))
+        from_account_label = toga.Label(self.i18n.t('from_account'), style=Pack(padding=(0, 5), text_align='center', font_weight='bold', text_direction=self.dir))
         self.from_account_input = toga.TextInput(
-            placeholder="أدخل اسم الحساب المحول منه...Enter the name of the account you are transferring from",
+            placeholder=self.i18n.t('form_account_input_placeholder'),
             on_change=self.from_account_input_on_change,
-            style=Pack(flex=1),
+            style=Pack(flex=1, text_direction=self.dir),
         )
         from_account_box.add(from_account_label)
         from_account_box.add(self.from_account_select)
         from_account_box.add(self.from_account_input)
 
         # to_account
-        to_account_box = toga.Box(style=Pack(direction=COLUMN))
+        to_account_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir))
         self.to_account_select = toga.Selection(
             items=accounts,
             on_change=self.to_account_select_on_change,
+            style=Pack(text_direction=self.dir),
         )
-        to_account_label = toga.Label("إلى الحساب (To Account)", style=Pack(padding=(0, 5), text_align='center', font_weight='bold'))
+        to_account_label = toga.Label(self.i18n.t('to_account'), style=Pack(padding=(0, 5), text_align='center', font_weight='bold', text_direction=self.dir))
         self.to_account_input = toga.TextInput(
-            placeholder="أدخل اسم الحساب المحول إليه...Enter the name of the account you are transferring to",
+            placeholder=self.i18n.t('to_account_input_placeholder'),
             on_change=self.to_account_input_on_change,
-            style=Pack(flex=1),
+            style=Pack(flex=1, text_direction=self.dir),
         )
         to_account_box.add(to_account_label)
         to_account_box.add(self.to_account_select)
@@ -224,21 +357,21 @@ class ZakatLedger(toga.App):
         transfer_form.add(toga.Divider())
         transfer_form.add(self.datetime_widget())
         transfer_form.add(toga.Divider())
-        transfer_form.add(self.footer_widget("تحويل (Transfer)", on_press=self.transfer))
+        transfer_form.add(self.footer_widget(self.i18n.t('transfer'), on_press=self.transfer))
         transfer_form.add(toga.Divider())
 
-        self.main_window.content = toga.ScrollContainer(content=transfer_form)
+        self.main_window.content = toga.ScrollContainer(content=transfer_form, style=Pack(text_direction=self.dir))
 
     def form(self, widget):
         print('form')
 
-        form = toga.Box(style=Pack(direction=COLUMN, flex=1))
+        form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
         # header
 
-        form_label = toga.Label("نموذج عملية مالية (Financial Transaction Form)", style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10))
+        form_label = toga.Label(self.i18n.t('financial_transaction_form'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
-        account_box = toga.Box(style=Pack(direction=COLUMN))
+        account_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir))
         # selection
         self.account_select = toga.Selection(
             items=self.accounts_selection_items(),
@@ -246,24 +379,24 @@ class ZakatLedger(toga.App):
         )
 
         # account
-        account_label = toga.Label("الحساب (Account)", style=Pack(padding=(0, 5)))
+        account_label = toga.Label(self.i18n.t('account'), style=Pack(padding=(0, 5), text_direction=self.dir))
         self.account_input = toga.TextInput(
-            placeholder="أدخل اسم الحساب...Enter the account name",
+            placeholder=self.i18n.t('account_input_placeholder'),
             on_change=self.account_input_on_change,
-            style=Pack(flex=1),
+            style=Pack(flex=1, text_direction=self.dir),
         )
         account_box.add(account_label)
         account_box.add(self.account_select)
         account_box.add(self.account_input)
 
         # switch
-        self.switch_input = toga.Switch("هل عملية خصم؟ - Is this a discount process?", style=Pack(flex=1, text_align='center'))
+        self.is_discount_switch = toga.Switch(self.i18n.t('is_discount_switch_text'), style=Pack(flex=1, text_align='center', text_direction=self.dir))
 
         # form order
 
         form.add(form_label)
         form.add(toga.Divider())
-        form.add(self.switch_input)
+        form.add(self.is_discount_switch)
         form.add(toga.Divider())
         form.add(account_box)
         form.add(toga.Divider())
@@ -273,14 +406,14 @@ class ZakatLedger(toga.App):
         form.add(toga.Divider())
         form.add(self.datetime_widget())
         form.add(toga.Divider())
-        form.add(self.footer_widget("حفظ (Save)", on_press=self.save))
+        form.add(self.footer_widget(self.i18n.t('save'), on_press=self.save))
         form.add(toga.Divider())
 
-        self.main_window.content = toga.ScrollContainer(content=form)
+        self.main_window.content = toga.ScrollContainer(content=form, style=Pack(text_direction=self.dir))
 
     # actions
 
-    def cancel(self, widget):
+    def goto_main_page(self, widget):
         print('cancel')
         self.main_window.content = self.main_box
 
@@ -299,7 +432,7 @@ class ZakatLedger(toga.App):
         minute = int(self.minute_input.value)
         second = int(self.second_input.value)
         datetime_value = datetime(year, month, day, hour, minute, second)
-        discount = self.switch_input.value
+        discount = self.is_discount_switch.value
         print(f'discount: {discount}')
         print(f'account: {account}')
         print(f'desc: {desc}')
@@ -307,8 +440,8 @@ class ZakatLedger(toga.App):
         print(f'datetime: {datetime_value}')
         if not account or not desc or not amount or not year or not month or not day or not hour or not minute or not second:
             self.main_window.error_dialog(
-                "خطأ في البيانات (Data error)",
-                "يرجى ملئ كل الحقول المطلوبة (Please fill out all required fields)",
+                self.i18n.t('data_error'),
+                self.i18n.t('all_fields_required_message'),
             )
             return
         try:
@@ -317,14 +450,14 @@ class ZakatLedger(toga.App):
             else:
                 self.db.track(amount, desc, account, created=ZakatTracker.time(datetime_value))
             self.update(widget)
-            self.cancel(widget)
+            self.goto_main_page(widget)
             self.main_window.info_dialog(
-                "تمت العملية بنجاح (Operation Accomplished Successfully)",
-                "حالة الرسالة (Message Status)",
+                self.i18n.t('operation_accomplished_successfully'),
+                self.i18n.t('message_status'),
             )
         except Exception as e:
             self.main_window.error_dialog(
-                "حدث خطأ (An Error Occurred)",
+                self.i18n.t('an_error_occurred'),
                 str(e),
             )
 
@@ -348,14 +481,14 @@ class ZakatLedger(toga.App):
         print(f'datetime: {datetime_value}')
         if not from_account or not to_account or not desc or not amount or not year or not month or not day or not hour or not minute or not second:
             self.main_window.error_dialog(
-                "خطأ في البيانات (Data error)",
-                "يرجى ملئ كل الحقول المطلوبة (Please fill out all required fields)",
+                self.i18n.t('data_error'),
+                self.i18n.t('all_fields_required_message'),
             )
             return
         if from_account == to_account:
             self.main_window.error_dialog(
-                "خطأ في البيانات (Data error)",
-                "لا يمكن تحويل من وإلى الحساب نفسه (It is not possible to transfer to and from the same account)",
+                self.i18n.t('data_error'),
+                self.i18n.t('transfer_to_the_same_account_error_message'),
             )
             return
 
@@ -363,52 +496,57 @@ class ZakatLedger(toga.App):
             self.db.transfer(amount, from_account, to_account, desc, created=ZakatTracker.time(datetime_value))
             self.db.free(self.db.lock()) # !!! need-revise: update zakat library, it should be auto freed.
             self.update(widget)
-            self.cancel(widget)
+            self.goto_main_page(widget)
             self.main_window.info_dialog(
-                "تمت العملية بنجاح (Operation Accomplished Successfully)",
-                "حالة الرسالة (Message Status)",
+                self.i18n.t('operation_accomplished_successfully'),
+                self.i18n.t('message_status'),
             )
         except Exception as e:
             self.main_window.error_dialog(
-                "حدث خطأ (An Error Occurred)",
+                self.i18n.t('an_error_occurred'),
                 str(e),
             )
 
     # widgets
 
+    def account_tab_page_label_widget(self, account):
+        balance = self.db.balance(account)
+        page_label = toga.Label(f'{account} - {balance}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        return page_label
+
     def desc_widget(self):
-        desc_label = toga.Label("الوصف (Desc)", style=Pack(padding=(0, 5)))
+        desc_label = toga.Label(self.i18n.t('desc'), style=Pack(padding=(0, 5), text_direction=self.dir))
         self.desc_input = toga.MultilineTextInput(
-            placeholder="أكتب وصف للعملية المحاسبية...Write a description of the accounting process",
-            style=Pack(flex=1),
+            placeholder=self.i18n.t('desc_input_placeholder'),
+            style=Pack(flex=1, text_direction=self.dir),
         )
-        desc_box = toga.Box(style=Pack(direction=ROW, padding=5, flex=1))
+        desc_box = toga.Box(style=Pack(direction=ROW, padding=5, flex=1, text_direction=self.dir))
         desc_box.add(desc_label)
         desc_box.add(self.desc_input)
         return desc_box
 
     def amount_widget(self):
         # amount
-        amount_label = toga.Label("المبلغ (Amount)", style=Pack(padding=(0, 5)))
-        self.amount_input = toga.NumberInput(min=0, step=0.000_001, style=Pack(flex=1))
-        amount_box = toga.Box(style=Pack(direction=ROW, padding=5))
+        amount_label = toga.Label(self.i18n.t('amount'), style=Pack(padding=(0, 5), text_direction=self.dir))
+        self.amount_input = toga.NumberInput(min=0, step=0.000_001, style=Pack(flex=1, text_direction=self.dir))
+        amount_box = toga.Box(style=Pack(direction=ROW, padding=5, text_direction=self.dir))
         amount_box.add(amount_label)
         amount_box.add(self.amount_input)
         return amount_box
 
     def datetime_widget(self):
         now = datetime.now()
-        datetime_box = toga.Box(style=Pack(direction=COLUMN, padding=5))
-        datetime_label = toga.Label("تاريخ وتوقيت العملية (Date and timing of the operation)", style=Pack(padding=(0, 5), text_align="center", font_weight='bold'))
+        datetime_box = toga.Box(style=Pack(direction=COLUMN, padding=5, text_direction=self.dir))
+        datetime_label = toga.Label(self.i18n.t('datetime_widget_label'), style=Pack(padding=(0, 5), text_align="center", font_weight='bold', text_direction=self.dir))
 
-        year_label = toga.Label("سنة/Year", style=Pack(padding=(0, 5)))
-        self.year_input = toga.NumberInput(min=1000, value=now.year, style=Pack(flex=1, width=66))
-        month_label = toga.Label("شهر/Month", style=Pack(padding=(0, 5)))
-        self.month_input = toga.NumberInput(min=1, max=12, value=now.month, style=Pack(flex=1, width=45))
-        day_label = toga.Label("يوم/Day", style=Pack(padding=(0, 5)))
-        self.day_input = toga.NumberInput(min=1, max=31, value=now.day, style=Pack(flex=1, width=45))
+        year_label = toga.Label(self.i18n.t('year'), style=Pack(padding=(0, 5), text_direction=self.dir))
+        self.year_input = toga.NumberInput(min=1000, value=now.year, style=Pack(flex=1, width=66, text_direction=self.dir))
+        month_label = toga.Label(self.i18n.t('month'), style=Pack(padding=(0, 5)))
+        self.month_input = toga.NumberInput(min=1, max=12, value=now.month, style=Pack(flex=1, width=45, text_direction=self.dir))
+        day_label = toga.Label(self.i18n.t('day'), style=Pack(padding=(0, 5)))
+        self.day_input = toga.NumberInput(min=1, max=31, value=now.day, style=Pack(flex=1, width=45, text_direction=self.dir))
 
-        date_box = toga.Box(style=Pack(direction=ROW, padding=5, flex=1))
+        date_box = toga.Box(style=Pack(direction=ROW, padding=5, flex=1, text_direction=self.dir))
         date_box.add(year_label)
         date_box.add(self.year_input)
         date_box.add(month_label)
@@ -416,14 +554,14 @@ class ZakatLedger(toga.App):
         date_box.add(day_label)
         date_box.add(self.day_input)
 
-        hour_label = toga.Label("ساعة/Hour", style=Pack(padding=(0, 5)))
-        self.hour_input = toga.NumberInput(min=0, max=23, value=now.hour, style=Pack(flex=1, width=45))
-        minute_label = toga.Label("دقيقة/Min.", style=Pack(padding=(0, 5)))
-        self.minute_input = toga.NumberInput(min=0, max=59, value=now.minute, style=Pack(flex=1, width=45))
-        second_label = toga.Label("ثانية/Sec.", style=Pack(padding=(0, 5)))
-        self.second_input = toga.NumberInput(min=0, max=59, value=now.second, style=Pack(flex=1, width=45))
+        hour_label = toga.Label(self.i18n.t('hour'), style=Pack(padding=(0, 5), text_direction=self.dir))
+        self.hour_input = toga.NumberInput(min=0, max=23, value=now.hour, style=Pack(flex=1, width=45, text_direction=self.dir))
+        minute_label = toga.Label(self.i18n.t('minute'), style=Pack(padding=(0, 5)))
+        self.minute_input = toga.NumberInput(min=0, max=59, value=now.minute, style=Pack(flex=1, width=45, text_direction=self.dir))
+        second_label = toga.Label(self.i18n.t('second'), style=Pack(padding=(0, 5)))
+        self.second_input = toga.NumberInput(min=0, max=59, value=now.second, style=Pack(flex=1, width=45, text_direction=self.dir))
         
-        time_box = toga.Box(style=Pack(direction=ROW, padding=5, flex=1))
+        time_box = toga.Box(style=Pack(direction=ROW, padding=5, flex=1, text_direction=self.dir))
         time_box.add(hour_label)
         time_box.add(self.hour_input)
         time_box.add(minute_label)
@@ -438,9 +576,9 @@ class ZakatLedger(toga.App):
         return datetime_box
 
     def footer_widget(self, text: str, on_press: toga.widgets.button.OnPressHandler | None = None):
-        footer = toga.Box(style=Pack(direction=ROW, padding=5))
-        cancel_button = toga.Button("إلغاء (Cancel)", on_press=self.cancel, style=Pack(flex=1))
-        save_button = toga.Button(text, on_press=on_press, style=Pack(flex=1))
+        footer = toga.Box(style=Pack(direction=ROW, padding=5, text_direction=self.dir))
+        cancel_button = toga.Button(self.i18n.t('cancel'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
+        save_button = toga.Button(text, on_press=on_press, style=Pack(flex=1, text_direction=self.dir))
 
         footer.add(cancel_button)
         footer.add(save_button)

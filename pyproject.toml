@@ -1,6 +1,6 @@
 # This project was generated with 0.3.19 using template: https://github.com/beeware/briefcase-template@v0.3.19
 [tool.briefcase]
-project_name = "Zakat Tracker"
+project_name = "متتبع الزكاة (Zakat Tracker)"
 bundle = "net.vzool.zakat-tracker"
 version = "0.0.1"
 url = "https://github.com/vzool/zakat-tracker"
@@ -9,7 +9,7 @@ author = "Abdelaziz Elrashed Elshaikh Mohamed"
 author_email = "aeemh.sdn@gmail.com"
 
 [tool.briefcase.app.zakat-tracker]
-formal_name = "Zakat Tracker"
+formal_name = "متتبع الزكاة (Zakat Tracker)"
 description = "Personal Accounting Software using Zakat way for all transactions from the beginning to the end"
 long_description = """More details about the app should go here.
 """
