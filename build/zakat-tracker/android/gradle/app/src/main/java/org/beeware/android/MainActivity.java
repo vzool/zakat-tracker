@@ -23,8 +23,29 @@ import org.json.JSONException;
 
 import net.vzool.zakat_tracker.zakat_tracker.R;
 
-
+import android.os.Handler;
+import android.widget.Toast;
+import android.app.AlertDialog;
 public class MainActivity extends AppCompatActivity {
+    private boolean doubleBackToExitPressedOnce = false;
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            // super.onBackPressed(); // Exit the app
+            new AlertDialog.Builder(this)
+                .setTitle("تأكيد الخروج (Exit Confirmation)")
+                .setMessage("هل أنت متأكد أنك تريد الخروج من التطبيق؟")
+                .setPositiveButton("نعم (Yes)", (dialog, which) -> finish())
+                .setNegativeButton("لا (No)", null)
+                .show();
+            return;
+        }
+
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "اضغط مرة أخرى للخروج - Press back again to exit", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(() -> doubleBackToExitPressedOnce = false, 2000); // Reset after 2 seconds
+    }
 
     // To profile app launch, use `adb -s MainActivity`; look for "onCreate() start" and "onResume() completed".
     private String TAG = "MainActivity";
