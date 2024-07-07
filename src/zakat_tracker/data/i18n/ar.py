@@ -15,6 +15,7 @@ translations = {
     
     # accounts_page 
     'add': 'إضافة',
+    'accounts_table_note': 'اضغط مرتين أو مطولا لعرض تفاصيل الحساب',
     'transfer': 'تحويل',
     'account': 'الحساب',
     'balance': 'الرصيد',

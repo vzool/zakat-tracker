@@ -134,6 +134,7 @@ class ZakatLedger(toga.App):
             ],
             style=Pack(direction=ROW, padding=5, text_direction=self.dir),
         ))
+        accounts_box.add(self.label_note_widget(self.i18n.t('accounts_table_note')))
         accounts_box.add(self.accounts)
         return accounts_box
 

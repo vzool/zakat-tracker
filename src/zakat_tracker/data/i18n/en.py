@@ -13,8 +13,9 @@ translations = {
     'language': 'Language',
     'lang_note': 'After changing the language please close the application and open it again',
     
-    # accounts_page 
+    # accounts_page
     'add': 'Add',
+    'accounts_table_note': 'Double tap or hold to view account details',
     'transfer': 'Transfer',
     'account': 'Account',
     'balance': 'Balance',
