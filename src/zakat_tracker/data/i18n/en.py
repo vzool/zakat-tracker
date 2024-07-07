@@ -58,6 +58,7 @@ translations = {
     # form
     'financial_transaction_form': 'Financial Transaction Form',
     'account_input_placeholder': 'Enter the account name...',
+    'is_new_account_switch_text': 'Is this a new account?',
     'is_discount_switch_text': 'Is this a discount process?',
     'save': 'Save',
 
@@ -66,10 +67,13 @@ translations = {
     'all_fields_required_message': 'Please fill out all required fields',
     'operation_accomplished_successfully': 'Operation Accomplished Successfully',
     'message_status': 'Message Status',
-    'an_error_occurred': 'An Error Occurred',
+    'unexpected_error': 'Unexpected Error',
 
     # transfer
     'transfer_to_the_same_account_error_message': 'It is not possible to transfer to the same account',
+
+    # account_tab_page_label_widget
+    'unit': 'Unit',
 
     # desc_widget
     'desc_input_placeholder': 'Write a description of the accounting process...',

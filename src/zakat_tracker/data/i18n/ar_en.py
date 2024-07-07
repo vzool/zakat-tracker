@@ -58,6 +58,7 @@ translations = {
     # form
     'financial_transaction_form': 'نموذج عملية مالية (Financial Transaction Form)',
     'account_input_placeholder': 'أدخل اسم الحساب...Enter the account name',
+    'is_new_account_switch_text': 'هل الحساب جديد؟ - Is this a new account?',
     'is_discount_switch_text': 'هل عملية خصم؟ - Is this a discount process?',
     'save': 'حفظ (Save)',
 
@@ -66,10 +67,13 @@ translations = {
     'all_fields_required_message': 'يرجى ملئ كل الحقول المطلوبة (Please fill out all required fields)',
     'operation_accomplished_successfully': 'تمت العملية بنجاح (Operation Accomplished Successfully)',
     'message_status': 'حالة الرسالة (Message Status)',
-    'an_error_occurred': 'حدث خطأ (An Error Occurred)',
+    'unexpected_error': 'خطأ غير متوقع (Unexpected Error)',
 
     # transfer
     'transfer_to_the_same_account_error_message': 'لا يمكن تحويل من وإلى الحساب نفسه (It is not possible to transfer to and from the same account)',
+
+    # account_tab_page_label_widget
+    'unit': 'وحدة (Unit)',
 
     # desc_widget
     'desc_input_placeholder': 'أكتب وصف للعملية المحاسبية...Write a description of the accounting process',

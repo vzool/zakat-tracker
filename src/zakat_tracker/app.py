@@ -312,11 +312,9 @@ class ZakatLedger(toga.App):
         form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
         # header
-
         form_label = toga.Label(self.i18n.t('exchange_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         # form order
-
         form.add(form_label)
         form.add(toga.Divider())
         form.add(self.readonly_account_widget(account))
@@ -348,7 +346,6 @@ class ZakatLedger(toga.App):
         transfer_form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
         # header
-
         form_label = toga.Label(self.i18n.t('financial_transfer_form'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         accounts = self.accounts_selection_items()
@@ -410,17 +407,16 @@ class ZakatLedger(toga.App):
         form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
         # header
-
         form_label = toga.Label(self.i18n.t('financial_transaction_form'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
+        # account_selection
         account_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir))
-        # selection
         self.account_select = toga.Selection(
             items=self.accounts_selection_items(),
             on_change=self.account_select_on_change,
         )
 
-        # account
+        # account_input
         account_label = toga.Label(self.i18n.t('account'), style=Pack(padding=(0, 5), text_direction=self.dir))
         self.account_input = toga.TextInput(
             placeholder=self.i18n.t('account_input_placeholder'),
@@ -432,13 +428,36 @@ class ZakatLedger(toga.App):
         account_box.add(self.account_input)
 
         # switch
+        def toggle_form(widget):
+            self.is_discount_switch.enabled = not widget.value
+            self.account_select.enabled = not widget.value
+            self.desc_input.enabled = not widget.value
+            self.amount_input.enabled = not widget.value
+            self.year_input.enabled = not widget.value
+            self.month_input.enabled = not widget.value
+            self.day_input.enabled = not widget.value
+            self.hour_input.enabled = not widget.value
+            self.minute_input.enabled = not widget.value
+            self.second_input.enabled = not widget.value
+            self.account_input.focus()
+        self.is_new_account_switch = toga.Switch(
+            self.i18n.t('is_new_account_switch_text'),
+            style=Pack(flex=1, text_align='center', text_direction=self.dir),
+            on_change=toggle_form,
+        )
         self.is_discount_switch = toga.Switch(self.i18n.t('is_discount_switch_text'), style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        switch_box = toga.Box(
+            children=[
+                self.is_new_account_switch,
+                self.is_discount_switch,
+            ],
+            style=Pack(direction=ROW, text_direction=self.dir),
+        )
 
         # form order
-
         form.add(form_label)
         form.add(toga.Divider())
-        form.add(self.is_discount_switch)
+        form.add(switch_box)
         form.add(toga.Divider())
         form.add(account_box)
         form.add(toga.Divider())
@@ -496,12 +515,13 @@ class ZakatLedger(toga.App):
             print('6')
         except Exception as e:
             self.main_window.error_dialog(
-                self.i18n.t('an_error_occurred'),
+                self.i18n.t('unexpected_error'),
                 str(e),
             )
 
     def save(self, widget):
         print('save')
+        new_account = self.is_new_account_switch.value
         account = self.account_input.value
         desc = self.desc_input.value
         amount = self.amount_input.value
@@ -513,12 +533,15 @@ class ZakatLedger(toga.App):
         second = int(self.second_input.value)
         datetime_value = datetime(year, month, day, hour, minute, second)
         discount = self.is_discount_switch.value
+        print(f'new_account: {new_account}')
         print(f'discount: {discount}')
         print(f'account: {account}')
         print(f'desc: {desc}')
         print(f'amount: {amount}')
         print(f'datetime: {datetime_value}')
-        if not account or not desc or not amount or not year or not month or not day or not hour or not minute or not second:
+        if new_account:
+            amount = 0
+        elif not account or not desc or not amount or not year or not month or not day or not hour or not minute or not second:
             self.main_window.error_dialog(
                 self.i18n.t('data_error'),
                 self.i18n.t('all_fields_required_message'),
@@ -537,7 +560,7 @@ class ZakatLedger(toga.App):
             )
         except Exception as e:
             self.main_window.error_dialog(
-                self.i18n.t('an_error_occurred'),
+                self.i18n.t('unexpected_error'),
                 str(e),
             )
 
@@ -583,15 +606,20 @@ class ZakatLedger(toga.App):
             )
         except Exception as e:
             self.main_window.error_dialog(
-                self.i18n.t('an_error_occurred'),
+                self.i18n.t('unexpected_error'),
                 str(e),
             )
 
     # widgets
 
+    def label_note_widget(self, note: str):
+        return toga.Label(f'* {note} *', style=Pack(flex=1, text_align=self.text_align, text_direction=self.dir, font_size=9))
+
     def account_tab_page_label_widget(self, account):
         balance = self.db.balance(account)
-        page_label = toga.Label(f'{account} - {balance}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        account_label = self.i18n.t('account')
+        unit = self.i18n.t('unit')
+        page_label = toga.Label(f'{account_label}: {account} = {balance} {unit}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         return page_label
 
     def desc_widget(self):
@@ -615,7 +643,6 @@ class ZakatLedger(toga.App):
         return amount_box
 
     def rate_widget(self):
-        # rate
         rate_label = toga.Label(self.i18n.t('rate'), style=Pack(padding=(0, 5), text_direction=self.dir))
         self.rate_input = toga.NumberInput(min=0.01, step=0.01, style=Pack(flex=1, text_direction=self.dir))
         rate_box = toga.Box(style=Pack(direction=ROW, padding=5, text_direction=self.dir))
@@ -624,7 +651,6 @@ class ZakatLedger(toga.App):
         return rate_box
     
     def readonly_account_widget(self, account):
-        # account
         account_label = toga.Label(self.i18n.t('account'), style=Pack(padding=(0, 5), text_direction=self.dir))
         account_input = toga.TextInput(value=account, readonly=True, style=Pack(flex=1, text_direction=self.dir))
         account_box = toga.Box(style=Pack(direction=ROW, padding=5, text_direction=self.dir))
