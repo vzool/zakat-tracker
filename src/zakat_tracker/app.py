@@ -34,6 +34,8 @@ class ZakatLedger(toga.App):
         config_path = os.path.join(self.paths.config, 'config.json')
         print(f'config: {config_path}')
         self.config = Config(config_path)
+
+        self.show_hidden_accounts = self.config.get('show_hidden_accounts', True)
         
         # set translations
 
@@ -84,7 +86,7 @@ class ZakatLedger(toga.App):
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
         # lang
-        lang_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        lang_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir))
         lang_label = toga.Label(self.i18n.t('language'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         lang_selection = toga.Selection(
             items=[lang.value for lang in Lang],
@@ -92,12 +94,38 @@ class ZakatLedger(toga.App):
             on_change=lambda e: self.config.set('lang', e.value),
             style=Pack(text_direction=self.dir)
         )
-        lang_note = toga.Label(self.i18n.t('lang_note'), style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        lang_note = toga.Label(self.i18n.t('lang_note'), style=Pack(flex=1, text_align='center', text_direction=self.dir, padding=5))
         lang_box.add(lang_label)
         lang_box.add(lang_selection)
         lang_box.add(lang_note)
 
+        # show hidden accounts
+        show_hidden_accounts_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5, flex=1, text_align='center'))
+        show_hidden_accounts_label = toga.Label(self.i18n.t('show_hidden_accounts'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        def show_hidden_accounts(status):
+                self.show_hidden_accounts = status
+                self.config.set('show_hidden_accounts', status)
+        show_hidden_accounts_switch = toga.Switch(
+            self.i18n.t('show_hidden_accounts'),
+            value=self.show_hidden_accounts,
+            on_change=lambda e: show_hidden_accounts(e.value),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        show_hidden_accounts_box.add(show_hidden_accounts_label)
+        show_hidden_accounts_box.add(show_hidden_accounts_switch)
+
+        # version
+        version_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        version_label = toga.Label(self.i18n.t('zakat_library_version'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        version_value = toga.Label(ZakatTracker.Version(), style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        version_box.add(version_label)
+        version_box.add(version_value)
+
         page.add(lang_box)
+        page.add(toga.Divider())
+        page.add(show_hidden_accounts_box)
+        page.add(toga.Divider())
+        page.add(version_box)
         return page
 
     def accounts_page(self):
@@ -147,11 +175,50 @@ class ZakatLedger(toga.App):
             ],
             style=Pack(flex=1, text_direction=self.dir),
         )
-        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
-        self.account_tabs = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        self.account_tabs.add(tabs)
-        self.account_tabs.add(back_button)
 
+        account_tabs = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+
+        # hide_account_switch
+        def hide_account(status):
+            self.db.hide(account, status)
+            self.db.save()
+        hide_account_switch = toga.Switch(
+            self.i18n.t('hide_account'),
+            value=self.db.hide(account),
+            on_change=lambda e: hide_account(e.value),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        account_tabs.add(hide_account_switch)
+
+        # zakatable_switch
+        def zakatable(status):
+            self.db.zakatable(account, status)
+            self.db.save()
+        zakatable_switch = toga.Switch(
+            self.i18n.t('zakatable'),
+            value=self.db.zakatable(account),
+            on_change=lambda e: zakatable(e.value),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        account_tabs.add(zakatable_switch)
+
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
+
+        # footer
+
+        footer = toga.Box(
+            children=[
+                back_button,
+                hide_account_switch,
+                zakatable_switch,
+            ],
+            style=Pack(direction=ROW, text_direction=self.dir),
+        )
+        
+        account_tabs.add(tabs)
+        account_tabs.add(footer)
+
+        self.account_tabs = account_tabs
         self.main_window.content = self.account_tabs
 
     def boxes_page(self, widget, account):
@@ -227,7 +294,7 @@ class ZakatLedger(toga.App):
     # generators
 
     def accounts_table_items(self):
-        return [(k, v, self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items()]
+        return [(k, v, self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.show_hidden_accounts]
 
     def boxes_table_items(self, account: str):
         return [(ZakatTracker.time_to_datetime(k), v['rest'], v['capital'], v['count'], v['last'], v['total']) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
@@ -553,6 +620,7 @@ class ZakatLedger(toga.App):
                 self.db.sub(amount, desc, account, created=ZakatTracker.time(datetime_value))
             else:
                 self.db.track(amount, desc, account, created=ZakatTracker.time(datetime_value))
+            self.db.save()
             self.update_accounts(widget)
             self.goto_main_page(widget)
             self.main_window.info_dialog(

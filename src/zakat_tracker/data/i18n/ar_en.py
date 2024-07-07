@@ -12,6 +12,8 @@ translations = {
     # settings_page
     'language': 'اللغة (Language)',
     'lang_note': 'بعد تغيير اللغة يرجى إغلاق التطبيق وفتحه مرة أخرى',
+    'show_hidden_accounts': 'عرض الحسابات المخفية في صفحة الحسابات',
+    'zakat_library_version': 'رقم نسخة مكتبة الزكاة',
     
     # accounts_page 
     'add': 'إضافة (Add)',
@@ -26,6 +28,8 @@ translations = {
     'boxes': 'الصناديق (Boxes)',
     'logs': 'الحركات (Logs)',
     'exchanges': 'أسعار الصرف (Exchanges)',
+    'hide_account': 'اخفاء الحساب؟',
+    'zakatable': 'الزكاة مفعلة؟',
     'back': 'رجوع (Back)',
 
     # boxes_page

@@ -12,6 +12,8 @@ translations = {
     # settings_page
     'language': 'Language',
     'lang_note': 'After changing the language please close the application and open it again',
+    'show_hidden_accounts': 'View hidden accounts on the Accounts page',
+    'zakat_library_version': 'Zakat Library Version',
     
     # accounts_page
     'add': 'Add',
@@ -26,6 +28,8 @@ translations = {
     'boxes': 'Boxes',
     'logs': 'Logs',
     'exchanges': 'Exchanges',
+    'hide_account': 'Hide account?',
+    'zakatable': 'Is Zakat Activated?',
     'back': 'Back',
 
     # boxes_page
