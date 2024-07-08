@@ -18,6 +18,9 @@ class ZakatLedger(toga.App):
     def startup(self):
 
         self.icon = toga.Icon.APP_ICON
+        self.os = toga.platform.current_platform.lower()
+        self.datetime_supported = self.os in ['android', 'windows']
+        print(f'platfom: {self.os} - datetime_supported: {self.datetime_supported}')
 
         # set database
 
@@ -590,26 +593,21 @@ class ZakatLedger(toga.App):
     def save(self, widget):
         print('save')
         new_account = self.is_new_account_switch.value
+        discount = self.is_discount_switch.value
         account = self.account_input.value
         desc = self.desc_input.value
         amount = self.amount_input.value
-        year = int(self.year_input.value)
-        month = int(self.month_input.value)
-        day = int(self.day_input.value)
-        hour = int(self.hour_input.value)
-        minute = int(self.minute_input.value)
-        second = int(self.second_input.value)
-        datetime_value = datetime(year, month, day, hour, minute, second)
-        discount = self.is_discount_switch.value
+        datetime_value, datetime_missing = self.datetime_value()
         print(f'new_account: {new_account}')
         print(f'discount: {discount}')
         print(f'account: {account}')
         print(f'desc: {desc}')
         print(f'amount: {amount}')
-        print(f'datetime: {datetime_value}')
+        print(f'datetime_missing: {datetime_missing}')
+        print(f'datetime_value: {datetime_value}')
         if new_account:
             amount = 0
-        elif not account or not desc or not amount or not year or not month or not day or not hour or not minute or not second:
+        elif not account or not desc or not amount or datetime_missing:
             self.main_window.error_dialog(
                 self.i18n.t('data_error'),
                 self.i18n.t('all_fields_required_message'),
@@ -639,19 +637,14 @@ class ZakatLedger(toga.App):
         to_account = self.to_account_input.value
         desc = self.desc_input.value
         amount = self.amount_input.value
-        year = int(self.year_input.value)
-        month = int(self.month_input.value)
-        day = int(self.day_input.value)
-        hour = int(self.hour_input.value)
-        minute = int(self.minute_input.value)
-        second = int(self.second_input.value)
-        datetime_value = datetime(year, month, day, hour, minute, second)
+        datetime_value, datetime_missing = self.datetime_value()
         print(f'from_account: {from_account}')
         print(f'to_account: {to_account}')
         print(f'desc: {desc}')
         print(f'amount: {amount}')
-        print(f'datetime: {datetime_value}')
-        if not from_account or not to_account or not desc or not amount or not year or not month or not day or not hour or not minute or not second:
+        print(f'datetime_missing: {datetime_missing}')
+        print(f'datetime_value: {datetime_value}')
+        if not from_account or not to_account or not desc or not amount or datetime_missing:
             self.main_window.error_dialog(
                 self.i18n.t('data_error'),
                 self.i18n.t('all_fields_required_message'),
@@ -678,6 +671,29 @@ class ZakatLedger(toga.App):
                 self.i18n.t('unexpected_error'),
                 str(e),
             )
+
+    # values
+
+    def datetime_value(self) -> tuple:
+        missing = False
+        if self.datetime_supported:
+            date = self.date_input.value
+            time = self.time_input.value
+            year = date.year
+            month = date.month
+            day = date.day
+            hour = time.hour
+            minute = time.minute
+            second = time.second
+        else:
+            year = int(self.year_input.value)
+            month = int(self.month_input.value)
+            day = int(self.day_input.value)
+            hour = int(self.hour_input.value)
+            minute = int(self.minute_input.value)
+            second = int(self.second_input.value)
+            missing = not year or not month or not day or not hour or not minute or not second
+        return datetime(year, month, day, hour, minute, second), missing
 
     # widgets
 
@@ -732,6 +748,15 @@ class ZakatLedger(toga.App):
         datetime_box = toga.Box(style=Pack(direction=COLUMN, padding=5, text_direction=self.dir))
         datetime_label = toga.Label(self.i18n.t('datetime_widget_label'), style=Pack(padding=(0, 5), text_align="center", font_weight='bold', text_direction=self.dir))
 
+        if self.datetime_supported:
+            self.date_input = toga.DateInput()
+            self.time_input = toga.TimeInput()
+            datetime_box.add(datetime_label)
+            datetime_box.add(toga.Divider())
+            datetime_box.add(self.date_input)
+            datetime_box.add(self.time_input)
+            return datetime_box
+        
         year_label = toga.Label(self.i18n.t('year'), style=Pack(padding=(0, 5), text_direction=self.dir))
         self.year_input = toga.NumberInput(min=1000, value=now.year, style=Pack(flex=1, width=66, text_direction=self.dir))
         month_label = toga.Label(self.i18n.t('month'), style=Pack(padding=(0, 5)))
