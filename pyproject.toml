@@ -2,7 +2,7 @@
 [tool.briefcase]
 project_name = "متتبع الزكاة (Zakat Tracker)"
 bundle = "net.vzool.zakat-tracker"
-version = "0.0.1"
+version = "0.0.11"
 url = "https://github.com/vzool/zakat-tracker"
 license.file = "LICENSE"
 author = "Abdelaziz Elrashed Elshaikh Mohamed"

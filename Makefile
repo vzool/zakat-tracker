@@ -4,6 +4,14 @@ clean:
 	rm -rf build
 	rm -rf logs
 
+.PHONY: update
+# update all
+update:
+	python -m pip install --upgrade briefcase
+	python -m pip install --upgrade zakat
+	briefcase create
+	briefcase update -r
+
 .PHONY: android
 # deploy android
 android:
@@ -14,6 +22,7 @@ android:
 	git checkout main
 	cp -r publish/android/ build/zakat-tracker/android/gradle/app/src/main/res/
 	briefcase update android --update-resources
+	briefcase update android -r
 	briefcase build android
 	cp build/zakat-tracker/android/gradle/app/build/outputs/apk/debug/app-debug.apk dist/zakat-tracker.apk
 
