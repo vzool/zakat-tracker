@@ -21,6 +21,7 @@ class ZakatLedger(toga.App):
         self.os = toga.platform.current_platform.lower()
         self.datetime_supported = self.os in ['android', 'windows']
         print(f'platfom: {self.os} - datetime_supported: {self.datetime_supported}')
+        print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
 
         # set database
@@ -107,7 +108,8 @@ class ZakatLedger(toga.App):
                     data.append((account, z, count))
             if not inline:
                 self.zakat.data = data
-                self.pay_button.text = self.i18n.t('pay') + f' {total}'
+                if hasattr(self, 'pay_button'):
+                    self.pay_button.text = self.i18n.t('pay') + f' {total}'
             return exists, total, data
         exists, total, data = refresh_zakat_page(None, True)
 
