@@ -21,6 +21,7 @@ class ZakatLedger(toga.App):
         self.os = toga.platform.current_platform.lower()
         self.datetime_supported = self.os in ['android', 'windows']
         print(f'platfom: {self.os} - datetime_supported: {self.datetime_supported}')
+        print(f'App Version: {self.version}')
 
         # set database
 
@@ -38,7 +39,9 @@ class ZakatLedger(toga.App):
         print(f'config: {config_path}')
         self.config = Config(config_path)
 
-        self.show_hidden_accounts = self.config.get('show_hidden_accounts', True)
+        self.config_show_hidden_accounts = self.config.get('show_hidden_accounts', True)
+        self.config_silver_gram_price_in_local_currency = self.config.get('silver_gram_price_in_local_currency', 2.17)
+        self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 255)
         
         # set translations
 
@@ -80,8 +83,58 @@ class ZakatLedger(toga.App):
     def zakat_page(self):
         print('zakat_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        page_label = toga.Label(self.i18n.t('zakat'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        page.add(page_label)
+        
+        # refresh_button
+        def refresh_zakat_page(widget, inline=False):
+            exists, stats, zakat = self.db.check(
+                silver_gram_price=self.config_silver_gram_price_in_local_currency,
+                cycle=ZakatTracker.TimeCycle(self.config_haul_time_cycle_in_days),
+                debug=True,
+            )
+            print(exists, stats, zakat)
+            data = []
+            total = 0
+            for account, x in zakat.items():
+                for _, y in x.items():
+                    z = 0
+                    count = 1
+                    if 'below_nisab' in y:
+                        z = y['below_nisab']
+                    else:
+                        z = y['total']
+                        count = y['count']
+                    total += z
+                    data.append((account, z, count))
+            if not inline:
+                self.zakat.data = data
+                self.pay_button.text = self.i18n.t('pay') + f' {total}'
+            return exists, total, data
+        exists, total, data = refresh_zakat_page(None, True)
+
+        if exists:
+            self.pay_button = toga.Button(
+                self.i18n.t('pay') + f' {total}',
+                on_press=refresh_zakat_page,
+                style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+            )
+            page.add(self.pay_button)
+
+        # table
+        self.zakat = toga.Table(
+            headings=[
+                self.i18n.t('account'),
+                self.i18n.t('total'),
+                self.i18n.t('zakat'),
+            ],
+            data=data,
+            missing_value="-",
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
+        )
+
+        refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
+        page.add(self.zakat)
+        page.add(refresh_button)
         return page
 
     def settings_page(self):
@@ -106,29 +159,73 @@ class ZakatLedger(toga.App):
         show_hidden_accounts_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5, flex=1, text_align='center'))
         show_hidden_accounts_label = toga.Label(self.i18n.t('show_hidden_accounts'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         def show_hidden_accounts(status):
-                self.show_hidden_accounts = status
+                self.config_show_hidden_accounts = status
                 self.config.set('show_hidden_accounts', status)
         show_hidden_accounts_switch = toga.Switch(
             self.i18n.t('show_hidden_accounts'),
-            value=self.show_hidden_accounts,
+            value=self.config_show_hidden_accounts,
             on_change=lambda e: show_hidden_accounts(e.value),
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
         show_hidden_accounts_box.add(show_hidden_accounts_label)
         show_hidden_accounts_box.add(show_hidden_accounts_switch)
 
-        # version
-        version_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
-        version_label = toga.Label(self.i18n.t('zakat_library_version'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        version_value = toga.Label(ZakatTracker.Version(), style=Pack(flex=1, text_align='center', text_direction=self.dir))
-        version_box.add(version_label)
-        version_box.add(version_value)
+        # silver_gram_price
+        silver_gram_price_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        silver_gram_price_label = toga.Label(self.i18n.t('silver_gram_price_in_local_currency'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        def update_silver_gram_price(value: float):
+            self.config_silver_gram_price_in_local_currency = value
+            self.config.set('silver_gram_price_in_local_currency', value)
+        silver_gram_price_input = toga.NumberInput(
+            min=0.01,
+            step=0.01,
+            value=self.config_silver_gram_price_in_local_currency,
+            on_change=lambda e: update_silver_gram_price(float(e.value)),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        silver_gram_price_box.add(silver_gram_price_label)
+        silver_gram_price_box.add(silver_gram_price_input)
+
+        # haul_time_cycle
+        haul_time_cycle_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        haul_time_cycle_label = toga.Label(self.i18n.t('haul_time_cycle_in_days'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        def update_haul_time_cycle(value: int):
+            self.config_haul_time_cycle_in_days = value
+            self.config.set('haul_time_cycle_in_days', value)
+        haul_time_cycle_input = toga.NumberInput(
+            min=1,
+            value=self.config_haul_time_cycle_in_days,
+            on_change=lambda e: update_haul_time_cycle(int(e.value)),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        haul_time_cycle_box.add(haul_time_cycle_label)
+        haul_time_cycle_box.add(haul_time_cycle_input)
+
+        # zakat_version
+        zakat_version_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        zakat_version_label = toga.Label(self.i18n.t('zakat_library_version'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        zakat_version_value = toga.Label(ZakatTracker.Version(), style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        zakat_version_box.add(zakat_version_label)
+        zakat_version_box.add(zakat_version_value)
+        
+        # app_version
+        app_version_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        app_version_label = toga.Label(self.i18n.t('app_version'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        app_version_value = toga.Label(self.version, style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        app_version_box.add(app_version_label)
+        app_version_box.add(app_version_value)
 
         page.add(lang_box)
         page.add(toga.Divider())
         page.add(show_hidden_accounts_box)
         page.add(toga.Divider())
-        page.add(version_box)
+        page.add(silver_gram_price_box)
+        page.add(toga.Divider())
+        page.add(haul_time_cycle_box)
+        page.add(toga.Divider())
+        page.add(zakat_version_box)
+        page.add(toga.Divider())
+        page.add(app_version_box)
         return page
 
     def accounts_page(self):
@@ -297,7 +394,7 @@ class ZakatLedger(toga.App):
     # generators
 
     def accounts_table_items(self):
-        return [(k, v, self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.show_hidden_accounts]
+        return [(k, v, self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.config_show_hidden_accounts]
 
     def boxes_table_items(self, account: str):
         return [(ZakatTracker.time_to_datetime(k), v['rest'], v['capital'], v['count'], v['last'], v['total']) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
@@ -335,6 +432,9 @@ class ZakatLedger(toga.App):
             balance = float(match.group(2))  # Convert to float
             return name, balance
         else:
+            pattern = " (0)"
+            if pattern in account:
+                return account.split(pattern)[0], 0
             return None  # Return None if no match
 
     # handlers

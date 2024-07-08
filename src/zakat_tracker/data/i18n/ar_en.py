@@ -8,12 +8,19 @@ translations = {
     'accounts': 'الحسابات (Accounts)',
     'zakat': 'الزكاة (Zakat)',
     'settings': 'الاعدادات (Settings)',
+
+    # zakat_page
+    'refresh': 'تحديث (Refresh)',
+    'pay': 'ادفع (Pay)',
     
     # settings_page
     'language': 'اللغة (Language)',
     'lang_note': 'بعد تغيير اللغة يرجى إغلاق التطبيق وفتحه مرة أخرى',
     'show_hidden_accounts': 'عرض الحسابات المخفية في صفحة الحسابات',
+    'silver_gram_price_in_local_currency': 'سعر جرام الفضة بالعملة المحلية',
+    'haul_time_cycle_in_days': 'عدد الأيام في السنة',
     'zakat_library_version': 'رقم نسخة مكتبة الزكاة',
+    'app_version': 'رقم نسخة التطبيق',
     
     # accounts_page 
     'add': 'إضافة (Add)',

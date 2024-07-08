@@ -8,12 +8,19 @@ translations = {
     'accounts': 'Accounts',
     'zakat': 'Zakat',
     'settings': 'Settings',
+
+    # zakat_page
+    'refresh': 'Refresh',
+    'pay': 'Pay',
     
     # settings_page
     'language': 'Language',
     'lang_note': 'After changing the language please close the application and open it again',
     'show_hidden_accounts': 'View hidden accounts on the Accounts page',
+    'silver_gram_price_in_local_currency': 'The price of a gram of silver in local currency',
+    'haul_time_cycle_in_days': 'Number of days in a year',
     'zakat_library_version': 'Zakat Library Version',
+    'app_version': 'Application Version',
     
     # accounts_page
     'add': 'Add',
