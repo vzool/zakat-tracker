@@ -113,7 +113,7 @@ class ZakatLedger(toga.App):
                         z = y['total']
                         count = y['count']
                     total += z
-                    data.append((account, z, count))
+                    data.append((ZakatTracker.time_to_datetime(y['box_time']), y['box_log'], account, z, count))
             if not inline:
                 self.zakat.data = data
                 if hasattr(self, 'pay_button'):
@@ -132,6 +132,8 @@ class ZakatLedger(toga.App):
         # table
         self.zakat = toga.Table(
             headings=[
+                self.i18n.t('date'),
+                self.i18n.t('desc'),
                 self.i18n.t('account'),
                 self.i18n.t('total'),
                 self.i18n.t('zakat'),
@@ -829,7 +831,7 @@ class ZakatLedger(toga.App):
             hour = int(self.hour_input.value)
             minute = int(self.minute_input.value)
             second = int(self.second_input.value)
-            missing = not year or not month or not day or not hour or not minute or not second
+            missing = not year or not month or not day
         return datetime(year, month, day, hour, minute, second), missing
 
     # widgets
