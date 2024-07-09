@@ -566,6 +566,7 @@ class ZakatLedger(toga.App):
         transfer_form.add(self.desc_widget())
         transfer_form.add(toga.Divider())
         transfer_form.add(self.amount_widget())
+        transfer_form.add(self.label_note_widget(self.i18n.t('transfer_amount_note')))
         transfer_form.add(toga.Divider())
         transfer_form.add(self.datetime_widget())
         transfer_form.add(toga.Divider())

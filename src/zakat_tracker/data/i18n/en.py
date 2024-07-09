@@ -66,6 +66,7 @@ translations = {
     'form_account_input_placeholder': 'Enter the name of the account transferring from...',
     'to_account': 'To Account',
     'to_account_input_placeholder': 'Enter the name of the account transferring to...',
+    'transfer_amount_note': 'The exchange rates from the first account to the second account will be applied automatically, based on the last available exchange rate for them',
 
     # form
     'financial_transaction_form': 'Financial Transaction Form',

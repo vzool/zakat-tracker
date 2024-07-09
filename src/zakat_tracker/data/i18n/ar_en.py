@@ -66,6 +66,7 @@ translations = {
     'form_account_input_placeholder': 'أدخل اسم الحساب المحول منه...Enter the name of the account you are transferring from',
     'to_account': 'الحساب المحول إليه (To Account)',
     'to_account_input_placeholder': 'أدخل اسم الحساب المحول إليه...Enter the name of the account you are transferring to',
+    'transfer_amount_note': 'سوف يتم تطبيق أسعار الصرف من الحساب الأول إلى الحساب الثاني تلقائيا، بناءا على آخر سعر صرف متوفر لهما',
 
     # form
     'financial_transaction_form': 'نموذج عملية مالية (Financial Transaction Form)',
