@@ -14,6 +14,7 @@ translations = {
     'pay': 'Pay',
     'below_nisab_note': 'Zakat due {} but the total {} is less than the Nisab {}',
     'due': 'Due',
+    'row_details': 'Row Details',
     
     # settings_page
     'language': 'Language',

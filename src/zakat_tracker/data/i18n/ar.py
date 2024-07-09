@@ -14,6 +14,7 @@ translations = {
     'pay': 'ادفع',
     'below_nisab_note': 'الزكاة المستحقة {} ولكن المجموع {} أقل من النصاب {}',
     'due': 'الاستحقاق',
+    'row_details': 'تفاصيل الصف',
     
     # settings_page
     'language': 'اللغة',
