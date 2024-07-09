@@ -24,37 +24,9 @@ class ZakatLedger(toga.App):
         print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
 
-        # set database
-
-        if not os.path.exists(self.paths.data):
-            pathlib.Path.mkdir(self.paths.data)
-        db_path = os.path.join(self.paths.data, 'zakat.pickle')
-        print(f'db: {db_path}')
-        self.db = ZakatTracker(db_path)
-
-        # load config
-
-        if not os.path.exists(self.paths.config):
-            pathlib.Path.mkdir(self.paths.config)
-        config_path = os.path.join(self.paths.config, 'config.json')
-        print(f'config: {config_path}')
-        self.config = Config(config_path)
-
-        self.config_show_hidden_accounts = self.config.get('show_hidden_accounts', True)
-        self.config_silver_gram_price_in_local_currency = self.config.get('silver_gram_price_in_local_currency', 2.17)
-        self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
-        self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 355)
-        
-        # set translations
-
-        if not os.path.exists(config_path):
-            self.i18n = i18n(Lang.AR_EN)
-            self.config.set('lang', Lang.AR_EN.value)
-        else:
-            self.i18n = i18n(Lang(self.config.get('lang')))
-
-        self.dir = self.i18n.t('dir', 'rtl')
-        self.text_align = self.i18n.t('text_align', 'right')
+        self.load_db()
+        self.load_config()
+        self.load_translations()
 
         # logo_view = toga.ImageView(id="view", image="resources/zakat_tracker_logo.png")
         # logo_view.style.padding = 120
@@ -67,7 +39,37 @@ class ZakatLedger(toga.App):
         )
         self.main_tabs_page()
         self.main_window.show()
-    
+
+    # loaders
+
+    def load_db(self):
+        if not os.path.exists(self.paths.data):
+            pathlib.Path.mkdir(self.paths.data)
+        self.db_path = os.path.join(self.paths.data, 'zakat.pickle')
+        print(f'db: {self.db_path}')
+        self.db = ZakatTracker(self.db_path)
+
+    def load_config(self):
+        if not os.path.exists(self.paths.config):
+            pathlib.Path.mkdir(self.paths.config)
+        self.config_path = os.path.join(self.paths.config, 'config.json')
+        print(f'config: {self.config_path}')
+        self.config = Config(self.config_path)
+        self.config_show_hidden_accounts = self.config.get('show_hidden_accounts', False)
+        self.config_silver_gram_price_in_local_currency = self.config.get('silver_gram_price_in_local_currency', 2.17)
+        self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
+        self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 355)
+
+    def load_translations(self):
+        if not os.path.exists(self.config_path):
+            self.i18n = i18n(Lang.AR_EN)
+            self.config.set('lang', Lang.AR_EN.value)
+        else:
+            self.i18n = i18n(Lang(self.config.get('lang')))
+
+        self.dir = self.i18n.t('dir', 'rtl')
+        self.text_align = self.i18n.t('text_align', 'right')
+
     # pages
 
     def main_tabs_page(self):
@@ -168,6 +170,7 @@ class ZakatLedger(toga.App):
         def show_hidden_accounts(status):
                 self.config_show_hidden_accounts = status
                 self.config.set('show_hidden_accounts', status)
+                self.update_accounts(self)
         show_hidden_accounts_switch = toga.Switch(
             self.i18n.t('show_hidden_accounts'),
             value=self.config_show_hidden_accounts,
