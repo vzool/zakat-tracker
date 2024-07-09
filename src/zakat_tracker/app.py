@@ -120,7 +120,14 @@ class ZakatLedger(toga.App):
                         z = y['total']
                         count = y['count']
                     total += z
-                    data.append((ZakatTracker.time_to_datetime(y['box_time']), y['box_log'], account, z, count))
+                    data.append((
+                        ZakatTracker.time_to_datetime(y['box_time']),
+                        y['box_log'],
+                        account,
+                        str(y['box_rest']).rstrip('0').rstrip('.'),
+                        str(z).rstrip('0').rstrip('.'),
+                        count,
+                    ))
 
             self.zakat_table.data = data
             
@@ -141,7 +148,10 @@ class ZakatLedger(toga.App):
                     self.zakat_table.data = data
                     page.add(self.refresh_button)
             else:
-                self.zakat_note.text = self.i18n.t('below_nisab_note').format(total, stats[1], self.nisab)
+                zakat_str = str(round(total, 2)).rstrip('0').rstrip('.')
+                total_str = str(round(stats[1], 2)).rstrip('0').rstrip('.')
+                nisab_str = str(round(self.nisab, 2)).rstrip('0').rstrip('.')
+                self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
                 page.add(self.zakat_note)
                 
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -152,8 +162,9 @@ class ZakatLedger(toga.App):
                     self.i18n.t('date'),
                     self.i18n.t('desc'),
                     self.i18n.t('account'),
-                    self.i18n.t('total'),
+                    self.i18n.t('rest'),
                     self.i18n.t('zakat'),
+                    self.i18n.t('due'),
                 ],
                 missing_value="-",
                 style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
@@ -449,13 +460,13 @@ class ZakatLedger(toga.App):
     # generators
 
     def accounts_table_items(self):
-        return [(k, v, self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.config_show_hidden_accounts]
+        return [(k, str(v).rstrip('0').rstrip('.'), self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.config_show_hidden_accounts]
 
     def boxes_table_items(self, account: str):
-        return [(ZakatTracker.time_to_datetime(k), v['rest'], v['capital'], v['count'], v['last'], v['total']) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
+        return [(ZakatTracker.time_to_datetime(k), str(v['rest']).rstrip('0').rstrip('.'), str(v['capital']).rstrip('0').rstrip('.'), v['count'], v['last'], str(v['total']).rstrip('0').rstrip('.')) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
 
     def logs_table_items(self, account: str):
-        return [(ZakatTracker.time_to_datetime(k), v['value'], v['desc']) for k,v in sorted(self.db.logs(account).items(), reverse=True)]
+        return [(ZakatTracker.time_to_datetime(k), str(v['value']).rstrip('0').rstrip('.'), v['desc']) for k,v in sorted(self.db.logs(account).items(), reverse=True)]
 
     def exchanges_table_items(self, account: str):
         exchanges = self.db.exchanges()

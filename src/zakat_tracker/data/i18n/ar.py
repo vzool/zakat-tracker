@@ -13,6 +13,7 @@ translations = {
     'refresh': 'تحديث',
     'pay': 'ادفع',
     'below_nisab_note': 'الزكاة المستحقة {} ولكن المجموع {} أقل من النصاب {}',
+    'due': 'الاستحقاق',
     
     # settings_page
     'language': 'اللغة',
