@@ -16,6 +16,7 @@ translations = {
     # settings_page
     'language': 'اللغة',
     'lang_note': 'بعد تغيير اللغة يرجى إغلاق التطبيق وفتحه مرة أخرى',
+    'load_from_cache_when_possible': 'التحميل من ذاكرة التخزين المؤقتة إذا كانت متوفرة',
     'show_hidden_accounts': 'عرض الحسابات المخفية في صفحة الحسابات',
     'silver_gram_price_in_local_currency': 'سعر جرام الفضة بالعملة المحلية',
     'silver_nisab_gram_quantity': 'عدد الجرامات اللازمة لبلوغ النصاب',

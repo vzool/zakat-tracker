@@ -55,6 +55,7 @@ class ZakatLedger(toga.App):
         self.config_path = os.path.join(self.paths.config, 'config.json')
         print(f'config: {self.config_path}')
         self.config = Config(self.config_path)
+        self.config_load_from_cache_when_possible = self.config.get('load_from_cache_when_possible', True)
         self.config_show_hidden_accounts = self.config.get('show_hidden_accounts', False)
         self.config_silver_gram_price_in_local_currency = self.config.get('silver_gram_price_in_local_currency', 2.17)
         self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
@@ -164,9 +165,15 @@ class ZakatLedger(toga.App):
         lang_box.add(lang_selection)
         lang_box.add(lang_note)
 
+        # load from cache
+        load_from_cache_when_possible_switch = toga.Switch(
+            self.i18n.t('load_from_cache_when_possible'),
+            value=self.config_load_from_cache_when_possible,
+            on_change=lambda e: self.config.set('load_from_cache_when_possible', e.value),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+
         # show hidden accounts
-        show_hidden_accounts_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5, flex=1, text_align='center'))
-        show_hidden_accounts_label = toga.Label(self.i18n.t('show_hidden_accounts'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         def show_hidden_accounts(status):
                 self.config_show_hidden_accounts = status
                 self.config.set('show_hidden_accounts', status)
@@ -177,8 +184,6 @@ class ZakatLedger(toga.App):
             on_change=lambda e: show_hidden_accounts(e.value),
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
-        show_hidden_accounts_box.add(show_hidden_accounts_label)
-        show_hidden_accounts_box.add(show_hidden_accounts_switch)
 
         # silver_gram_price
         silver_gram_price_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
@@ -243,7 +248,9 @@ class ZakatLedger(toga.App):
 
         page.add(lang_box)
         page.add(toga.Divider())
-        page.add(show_hidden_accounts_box)
+        page.add(load_from_cache_when_possible_switch)
+        page.add(toga.Divider())
+        page.add(show_hidden_accounts_switch)
         page.add(toga.Divider())
         page.add(silver_gram_price_box)
         page.add(toga.Divider())
@@ -831,7 +838,7 @@ class ZakatLedger(toga.App):
         return toga.Label(f'* {note} *', style=Pack(flex=1, text_align=self.text_align, text_direction=self.dir, font_size=9))
 
     def account_tab_page_label_widget(self, account):
-        balance = self.db.balance(account)
+        balance = self.db.balance(account, cached=self.config_load_from_cache_when_possible)
         account_label = self.i18n.t('account')
         unit = self.i18n.t('unit')
         page_label = toga.Label(f'{account_label}: {account} = {balance} {unit}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
