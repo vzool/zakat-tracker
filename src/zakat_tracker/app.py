@@ -85,12 +85,15 @@ class ZakatLedger(toga.App):
         )
         self.main_window.content = self.main_box
 
+    def pay_page(self, widget):
+        print('pay_page')
+
     def zakat_page(self):
         print('zakat_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        
+
         # refresh_button
-        def refresh_zakat_page(widget, inline=False):
+        def refresh_zakat_page(widget = None):
             exists, stats, zakat = self.db.check(
                 silver_gram_price=self.config_silver_gram_price_in_local_currency,
                 nisab=ZakatTracker.Nisab(
@@ -114,39 +117,47 @@ class ZakatLedger(toga.App):
                         count = y['count']
                     total += z
                     data.append((ZakatTracker.time_to_datetime(y['box_time']), y['box_log'], account, z, count))
-            if not inline:
-                self.zakat.data = data
+
+            self.zakat_table.data = data
+            
+            if exists:
                 if hasattr(self, 'pay_button'):
                     self.pay_button.text = self.i18n.t('pay') + f' {total}'
-            return exists, total, data
-        exists, total, data = refresh_zakat_page(None, True)
+                else:
+                    page.clear()
+                    self.pay_button = toga.Button(
+                        self.i18n.t('pay') + f' {total}',
+                        on_press=self.pay_page,
+                        style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+                    )
+                    page.add(self.pay_button)
+                    refresh_zakat_page()
+                    create_table()
+                    self.zakat_table.data = data
+                    page.add(self.refresh_button)
 
-        if exists:
-            self.pay_button = toga.Button(
-                self.i18n.t('pay') + f' {total}',
-                on_press=refresh_zakat_page,
-                style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+            return data
+
+        self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
+        def create_table():
+            self.zakat_table = toga.Table(
+                headings=[
+                    self.i18n.t('date'),
+                    self.i18n.t('desc'),
+                    self.i18n.t('account'),
+                    self.i18n.t('total'),
+                    self.i18n.t('zakat'),
+                ],
+                missing_value="-",
+                style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
             )
-            page.add(self.pay_button)
+            page.add(self.zakat_table)
 
-        # table
-        self.zakat = toga.Table(
-            headings=[
-                self.i18n.t('date'),
-                self.i18n.t('desc'),
-                self.i18n.t('account'),
-                self.i18n.t('total'),
-                self.i18n.t('zakat'),
-            ],
-            data=data,
-            missing_value="-",
-            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
-        )
+        create_table()
+        refresh_zakat_page()
 
-        refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-
-        page.add(self.zakat)
-        page.add(refresh_button)
+        page.add(self.refresh_button)
         return page
 
     def settings_page(self):
