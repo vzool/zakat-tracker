@@ -12,6 +12,7 @@ translations = {
     # zakat_page
     'refresh': 'Refresh',
     'pay': 'Pay',
+    'below_nisab_note': 'Zakat due {} but the total {} is less than the Nisab {}',
     
     # settings_page
     'language': 'Language',

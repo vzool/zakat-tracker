@@ -12,6 +12,7 @@ translations = {
     # zakat_page
     'refresh': 'تحديث (Refresh)',
     'pay': 'ادفع (Pay)',
+    'below_nisab_note': 'الزكاة المستحقة {} ولكن المجموع {} أقل من النصاب {}',
     
     # settings_page
     'language': 'اللغة (Language)',

@@ -61,6 +61,8 @@ class ZakatLedger(toga.App):
         self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
         self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 355)
 
+        self.nisab = self.config_silver_gram_price_in_local_currency * self.config_silver_nisab_gram_quantity
+
     def load_translations(self):
         if not os.path.exists(self.config_path):
             self.i18n = i18n(Lang.AR_EN)
@@ -91,6 +93,8 @@ class ZakatLedger(toga.App):
     def zakat_page(self):
         print('zakat_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+
+        self.zakat_note = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         # refresh_button
         def refresh_zakat_page(widget = None):
@@ -133,11 +137,13 @@ class ZakatLedger(toga.App):
                     page.add(self.pay_button)
                     refresh_zakat_page()
                     create_table()
+                    page.add(self.zakat_table)
                     self.zakat_table.data = data
                     page.add(self.refresh_button)
-
-            return data
-
+            else:
+                self.zakat_note.text = self.i18n.t('below_nisab_note').format(total, stats[1], self.nisab)
+                page.add(self.zakat_note)
+                
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         def create_table():
@@ -152,10 +158,10 @@ class ZakatLedger(toga.App):
                 missing_value="-",
                 style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
             )
-            page.add(self.zakat_table)
 
         create_table()
         refresh_zakat_page()
+        page.add(self.zakat_table)
 
         page.add(self.refresh_button)
         return page
