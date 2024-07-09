@@ -18,13 +18,14 @@ translations = {
     'lang_note': 'بعد تغيير اللغة يرجى إغلاق التطبيق وفتحه مرة أخرى',
     'show_hidden_accounts': 'عرض الحسابات المخفية في صفحة الحسابات',
     'silver_gram_price_in_local_currency': 'سعر جرام الفضة بالعملة المحلية',
+    'silver_nisab_gram_quantity': 'عدد الجرامات اللازمة لبلوغ النصاب',
     'haul_time_cycle_in_days': 'عدد الأيام في السنة',
     'zakat_library_version': 'رقم نسخة مكتبة الزكاة',
     'app_version': 'رقم نسخة التطبيق',
     
     # accounts_page 
     'add': 'إضافة',
-    'accounts_table_note': 'اضغط مرتين أو مطولا لعرض تفاصيل الحساب',
+    'accounts_table_note': 'اضغط مرتين أو ضغطة مطولة لعرض تفاصيل الحساب',
     'transfer': 'تحويل',
     'account': 'الحساب',
     'balance': 'الرصيد',
@@ -52,6 +53,7 @@ translations = {
     'desc': 'الوصف',
 
     # exchanges_page
+    'exchanges_note': 'أسعار الصرف لا  تؤثر إلا على حساب الزكاة والتحويل من حساب إلى آخر',
     'rate': 'المعدل',
 
     # account_table_on_activate

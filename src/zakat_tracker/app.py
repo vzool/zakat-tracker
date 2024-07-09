@@ -42,7 +42,8 @@ class ZakatLedger(toga.App):
 
         self.config_show_hidden_accounts = self.config.get('show_hidden_accounts', True)
         self.config_silver_gram_price_in_local_currency = self.config.get('silver_gram_price_in_local_currency', 2.17)
-        self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 255)
+        self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
+        self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 355)
         
         # set translations
 
@@ -89,6 +90,10 @@ class ZakatLedger(toga.App):
         def refresh_zakat_page(widget, inline=False):
             exists, stats, zakat = self.db.check(
                 silver_gram_price=self.config_silver_gram_price_in_local_currency,
+                nisab=ZakatTracker.Nisab(
+                    self.config_silver_gram_price_in_local_currency,
+                    self.config_silver_nisab_gram_quantity,
+                ),
                 cycle=ZakatTracker.TimeCycle(self.config_haul_time_cycle_in_days),
                 debug=True,
             )
@@ -188,6 +193,22 @@ class ZakatLedger(toga.App):
         silver_gram_price_box.add(silver_gram_price_label)
         silver_gram_price_box.add(silver_gram_price_input)
 
+        # silver_nisab_gram_quantity
+        silver_nisab_gram_quantity_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        silver_nisab_gram_quantity_label = toga.Label(self.i18n.t('silver_nisab_gram_quantity'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        def update_silver_nisab_gram_quantity(value: float):
+            self.config_silver_nisab_gram_quantity = value
+            self.config.set('silver_nisab_gram_quantity', value)
+        silver_nisab_gram_quantity_input = toga.NumberInput(
+            min=0.01,
+            step=0.01,
+            value=self.config_silver_nisab_gram_quantity,
+            on_change=lambda e: update_silver_nisab_gram_quantity(float(e.value)),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        silver_nisab_gram_quantity_box.add(silver_nisab_gram_quantity_label)
+        silver_nisab_gram_quantity_box.add(silver_nisab_gram_quantity_input)
+
         # haul_time_cycle
         haul_time_cycle_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
         haul_time_cycle_label = toga.Label(self.i18n.t('haul_time_cycle_in_days'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -222,6 +243,8 @@ class ZakatLedger(toga.App):
         page.add(show_hidden_accounts_box)
         page.add(toga.Divider())
         page.add(silver_gram_price_box)
+        page.add(toga.Divider())
+        page.add(silver_nisab_gram_quantity_box)
         page.add(toga.Divider())
         page.add(haul_time_cycle_box)
         page.add(toga.Divider())
@@ -390,6 +413,7 @@ class ZakatLedger(toga.App):
 
         page.add(self.account_tab_page_label_widget(account))
         page.add(add_button)
+        page.add(self.label_note_widget(self.i18n.t('exchanges_note')))
         page.add(self.exchanges)
         return page
 

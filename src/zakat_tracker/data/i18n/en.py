@@ -18,6 +18,7 @@ translations = {
     'lang_note': 'After changing the language please close the application and open it again',
     'show_hidden_accounts': 'View hidden accounts on the Accounts page',
     'silver_gram_price_in_local_currency': 'The price of a gram of silver in local currency',
+    'silver_nisab_gram_quantity': 'The number of grams needed to reach the Nisab',
     'haul_time_cycle_in_days': 'Number of days in a year',
     'zakat_library_version': 'Zakat Library Version',
     'app_version': 'Application Version',
@@ -52,6 +53,7 @@ translations = {
     'desc': 'Description',
 
     # exchanges_page
+    'exchanges_note': 'Exchange rates only affect Zakat calculations and transfers from one account to another',
     'rate': 'Rate',
 
     # account_table_on_activate

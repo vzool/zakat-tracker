@@ -4,6 +4,11 @@ clean:
 	rm -rf build
 	rm -rf logs
 
+.PHONY: run
+# run application
+run:
+	briefcase dev -r
+
 .PHONY: update
 # update all
 update:
@@ -25,7 +30,7 @@ android:
 	cp publish/bundle/android/drawable-xxhdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-xxhdpi/splash.png
 	cp publish/bundle/android/drawable-xhdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-xhdpi/splash.png
 	cp publish/bundle/android/drawable-mdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-mdpi/splash.png
-	# cp publish/bundle/android/drawable-ldpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-ldpi/splash.png
+	cp publish/bundle/android/drawable-ldpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-ldpi/splash.png
 	cp publish/bundle/android/drawable-hdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-hdpi/splash.png
 	briefcase update android --update-resources
 	briefcase update android -r
