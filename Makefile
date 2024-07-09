@@ -21,6 +21,12 @@ android:
 	git stash push -m "deploy"
 	git checkout main
 	cp -r publish/android/ build/zakat-tracker/android/gradle/app/src/main/res/
+	cp publish/bundle/android/drawable-xxxhdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-xxxhdpi/splash.png
+	cp publish/bundle/android/drawable-xxhdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-xxhdpi/splash.png
+	cp publish/bundle/android/drawable-xhdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-xhdpi/splash.png
+	cp publish/bundle/android/drawable-mdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-mdpi/splash.png
+	# cp publish/bundle/android/drawable-ldpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-ldpi/splash.png
+	cp publish/bundle/android/drawable-hdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-hdpi/splash.png
 	briefcase update android --update-resources
 	briefcase update android -r
 	briefcase build android
