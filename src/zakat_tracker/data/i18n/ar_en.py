@@ -16,6 +16,7 @@ translations = {
     'table_show_row_details_note': 'اضغط مرتين أو ضغطة مطولة لعرض تفاصيل الصف',
     'due': 'الاستحقاق',
     'row_details': 'تفاصيل الصف',
+    'exchange_rate': 'معدل الصرف',
     
     # settings_page
     'language': 'اللغة (Language)',

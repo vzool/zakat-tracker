@@ -16,6 +16,7 @@ translations = {
     'table_show_row_details_note': 'Double tap or long press to view row details',
     'due': 'Due',
     'row_details': 'Row Details',
+    'exchange_rate': 'Exchange Rate',
     
     # settings_page
     'language': 'Language',

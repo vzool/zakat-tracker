@@ -134,7 +134,8 @@ class ZakatLedger(toga.App):
                         format_number(y['box_capital']),
                         format_number(y['box_rest']),
                         format_number(z),
-                        count,
+                        format_number(count),
+                        format_number(y['exchange_rate']),
                     ))
 
             self.zakat_table.data = data
@@ -176,6 +177,7 @@ class ZakatLedger(toga.App):
                     self.i18n.t('rest'),
                     self.i18n.t('zakat'),
                     self.i18n.t('due'),
+                    self.i18n.t('exchange_rate'),
                 ],
                 missing_value="-",
                 on_activate=lambda e, row: self.main_window.info_dialog(
@@ -802,7 +804,7 @@ class ZakatLedger(toga.App):
         print(f'rate: {rate}')
         print(f'desc: {desc}')
         print(f'datetime: {datetime_value}')
-        if not rate or not desc or not year or not month or not day or not hour or not minute or not second:
+        if not rate or not desc or not year or not month or not day:
             self.main_window.error_dialog(
                 self.i18n.t('data_error'),
                 self.i18n.t('all_fields_required_message'),
@@ -811,12 +813,12 @@ class ZakatLedger(toga.App):
         try:
             self.db.exchange(account, created=ZakatTracker.time(datetime_value), rate=rate, description=desc, debug=True)
             self.update_exchanges(widget, account)
+            self.db.save()
             self.main_window.content = self.account_tabs
             self.main_window.info_dialog(
                 self.i18n.t('operation_accomplished_successfully'),
                 self.i18n.t('message_status'),
             )
-            print('6')
         except Exception as e:
             self.main_window.error_dialog(
                 self.i18n.t('unexpected_error'),
