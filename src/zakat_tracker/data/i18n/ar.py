@@ -18,6 +18,8 @@ translations = {
     'due': 'الاستحقاق',
     'row_details': 'تفاصيل الصف',
     'exchange_rate': 'معدل الصرف',
+    'exchange_time': 'وقت معدل الصرف',
+    'exchange_desc': 'وصف معدل الصرف',
     
     # settings_page
     'language': 'اللغة',

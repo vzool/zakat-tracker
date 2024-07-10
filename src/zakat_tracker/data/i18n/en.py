@@ -18,6 +18,8 @@ translations = {
     'due': 'Due',
     'row_details': 'Row Details',
     'exchange_rate': 'Exchange Rate',
+    'exchange_time': 'Exchange Time',
+    'exchange_desc': 'Exchange Description',
     
     # settings_page
     'language': 'Language',

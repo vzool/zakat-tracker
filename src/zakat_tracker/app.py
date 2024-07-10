@@ -137,6 +137,8 @@ class ZakatLedger(toga.App):
                         format_number(z),
                         format_number(count),
                         format_number(y['exchange_rate']),
+                        ZakatTracker.time_to_datetime(y['exchange_time']),
+                        y['exchange_desc'],
                     ))
 
             self.zakat_table.data = data
@@ -180,6 +182,8 @@ class ZakatLedger(toga.App):
                     self.i18n.t('zakat'),
                     self.i18n.t('due'),
                     self.i18n.t('exchange_rate'),
+                    self.i18n.t('exchange_time'),
+                    self.i18n.t('exchange_desc'),
                 ],
                 missing_value="-",
                 on_activate=lambda e, row: self.main_window.info_dialog(
