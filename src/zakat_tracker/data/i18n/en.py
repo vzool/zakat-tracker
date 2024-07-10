@@ -13,6 +13,7 @@ translations = {
     'refresh': 'Refresh',
     'pay': 'Pay',
     'below_nisab_note': 'Zakat due {} but the total {} is less than the Nisab {}',
+    'table_show_row_details_note': 'Double tap or long press to view row details',
     'due': 'Due',
     'row_details': 'Row Details',
     
@@ -29,12 +30,14 @@ translations = {
     
     # accounts_page
     'add': 'Add',
-    'accounts_table_note': 'Double tap or hold to view account details',
+    'accounts_table_note': 'One-click to view details of boxes or logs in the account',
     'transfer': 'Transfer',
     'account': 'Account',
     'balance': 'Balance',
     'box': 'Box',
     'log': 'Log',
+    'yes': 'Yes',
+    'no': 'No',
 
     # account_tabs_page
     'boxes': 'Boxes',
@@ -43,6 +46,7 @@ translations = {
     'hide_account': 'Hide account?',
     'zakatable': 'Is Zakat Activated?',
     'back': 'Back',
+    'hide': 'Hide',
 
     # boxes_page
     'date': 'Date',

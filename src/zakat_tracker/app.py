@@ -20,16 +20,6 @@ def format_number(x) -> str:
         return '0'
     return format(float(y), ',').rstrip('0').rstrip('.')
 
-def row_details_str(headings, row):
-    result = ''
-    for x in headings:
-        try:
-            value = str(getattr(row, x.replace(' ', '_')))
-            result += f'{x} = {value}\n'
-        except:
-            pass
-    return result
-
 class ZakatLedger(toga.App):
     def startup(self):
 
@@ -170,6 +160,7 @@ class ZakatLedger(toga.App):
                 nisab_str = format_number(round(self.nisab, 2))
                 self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
                 page.add(self.zakat_note)
+                page.add(toga.Divider())
                 
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
@@ -187,13 +178,14 @@ class ZakatLedger(toga.App):
                 missing_value="-",
                 on_activate=lambda e, row: self.main_window.info_dialog(
                     self.i18n.t('row_details'),
-                    row_details_str(self.zakat_table.headings, row),
+                    self.row_details_str(self.zakat_table.headings, row),
                 ),
                 style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
             )
 
         create_table()
         refresh_zakat_page()
+        page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(self.zakat_table)
 
         page.add(self.refresh_button)
@@ -317,7 +309,7 @@ class ZakatLedger(toga.App):
 
     def accounts_page(self):
         print('accounts_page')
-        accounts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         add_button = toga.Button(
             self.i18n.t('add'),
             on_press=self.form,
@@ -328,30 +320,36 @@ class ZakatLedger(toga.App):
             on_press=self.transfer_form,
             style=Pack(flex=1, text_direction=self.dir),
         )
-        self.accounts = toga.Table(
+        self.accounts_table = toga.Table(
             headings=[
                 self.i18n.t('account'),
                 self.i18n.t('balance'),
                 self.i18n.t('box'),
                 self.i18n.t('log'),
+                self.i18n.t('hide'),
+                self.i18n.t('zakatable'),
             ],
             missing_value="-",
             data=self.accounts_table_items(),
             on_select=self.account_table_on_select,
-            on_activate=self.account_table_on_activate,
+            on_activate=lambda e, row: self.main_window.info_dialog(
+                self.i18n.t('row_details'),
+                self.row_details_str(self.accounts_table.headings, row),
+            ),
             style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
         )
 
-        accounts_box.add(toga.Box(
+        page.add(toga.Box(
             children=[
                 add_button, 
                 transfer_button,
             ],
             style=Pack(direction=ROW, padding=5, text_direction=self.dir),
         ))
-        accounts_box.add(self.label_note_widget(self.i18n.t('accounts_table_note')))
-        accounts_box.add(self.accounts)
-        return accounts_box
+        page.add(self.label_note_widget(self.i18n.t('accounts_table_note')))
+        page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
+        page.add(self.accounts_table)
+        return page
 
     def account_tabs_page(self, widget, account):
         tabs = toga.OptionContainer(
@@ -380,6 +378,7 @@ class ZakatLedger(toga.App):
         # zakatable_switch
         def zakatable(status):
             self.db.zakatable(account, status)
+            self.update_accounts(account)
             self.db.save()
         zakatable_switch = toga.Switch(
             self.i18n.t('zakatable'),
@@ -426,12 +425,13 @@ class ZakatLedger(toga.App):
             data=self.boxes_table_items(account),
             on_activate=lambda e, row: self.main_window.info_dialog(
                 self.i18n.t('row_details'),
-                row_details_str(self.boxes_table.headings, row),
+                self.row_details_str(self.boxes_table.headings, row),
             ),
             style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
         )
 
         page.add(self.account_tab_page_label_widget(account))
+        page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(self.boxes_table)
         return page
 
@@ -450,12 +450,13 @@ class ZakatLedger(toga.App):
             data=self.logs_table_items(account),
             on_activate=lambda e, row: self.main_window.info_dialog(
                 self.i18n.t('row_details'),
-                row_details_str(self.logs_table.headings, row),
+                self.row_details_str(self.logs_table.headings, row),
             ),
             style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
         )
 
         page.add(self.account_tab_page_label_widget(account))
+        page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(self.logs_table)
         return page
 
@@ -480,7 +481,7 @@ class ZakatLedger(toga.App):
             data=self.exchanges_table_items(account),
             on_activate=lambda e, row: self.main_window.info_dialog(
                 self.i18n.t('row_details'),
-                row_details_str(self.exchanges_table.headings, row),
+                self.row_details_str(self.exchanges_table.headings, row),
             ),
             style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
         )
@@ -488,13 +489,21 @@ class ZakatLedger(toga.App):
         page.add(self.account_tab_page_label_widget(account))
         page.add(add_button)
         page.add(self.label_note_widget(self.i18n.t('exchanges_note')))
+        page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(self.exchanges_table)
         return page
 
     # generators
 
     def accounts_table_items(self):
-        return [(k, format_number(v), self.db.box_size(k), self.db.log_size(k)) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.config_show_hidden_accounts]
+        return [(
+            k,
+            format_number(v),
+            self.db.box_size(k),
+            self.db.log_size(k),
+            self.i18n.t('yes') if self.db.hide(k) else self.i18n.t('no'),
+            self.i18n.t('yes') if self.db.zakatable(k) else self.i18n.t('no'),
+        ) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.config_show_hidden_accounts]
 
     def boxes_table_items(self, account: str):
         return [(
@@ -560,13 +569,14 @@ class ZakatLedger(toga.App):
 
     def account_table_on_select(self, widget):
         print('account_table_on_select', widget.selection)
-
-    def account_table_on_activate(self, widget, row: toga.sources.list_source.Row):
         access_key = self.i18n.t('table_account_access_key')
         print('account_table_on_activate', f'access_key({access_key})')
-        account = getattr(row, access_key)
+        account = getattr(widget.selection, access_key)
         print('account_table_on_activate', account)
         self.account_tabs_page(widget, account)
+
+    def account_table_on_activate(self, widget, row: toga.sources.list_source.Row):
+        pass
 
     def account_select_on_change(self, widget):
         print('account_select_on_change', widget.value)
@@ -770,7 +780,7 @@ class ZakatLedger(toga.App):
         self.main_window.content = self.main_box
 
     def update_accounts(self, widget):
-        self.accounts.data = self.accounts_table_items()
+        self.accounts_table.data = self.accounts_table_items()
     
     def update_exchanges(self, widget, account):
         self.exchanges.data = self.exchanges_table_items(account)
@@ -1021,6 +1031,24 @@ class ZakatLedger(toga.App):
         footer.add(cancel_button)
         footer.add(save_button)
         return footer
+
+    # transformers
+
+    def row_details_str(self, headings, row: toga.sources.list_source.Row):
+        result = ''
+        i = 0
+        for x in headings:
+            i += 1
+            try:
+                key = x.replace(' ', '_').lower().rstrip('?').rstrip('؟')
+                value = getattr(row, key)
+                value_str = str(value)
+                if type(value) is bool:
+                    value_str = self.i18n.t('yes') if value else self.i18n.t('no')
+                result += f'{i}- {x} = {value_str}\n'
+            except:
+                print(f'Error(row_details_str): key({key}) not found in row')
+        return result
 
 def main():
     return ZakatLedger()

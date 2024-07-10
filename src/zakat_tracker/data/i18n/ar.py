@@ -13,6 +13,7 @@ translations = {
     'refresh': 'تحديث',
     'pay': 'ادفع',
     'below_nisab_note': 'الزكاة المستحقة {} ولكن المجموع {} أقل من النصاب {}',
+    'table_show_row_details_note': 'اضغط مرتين أو ضغطة مطولة لعرض تفاصيل الصف',
     'due': 'الاستحقاق',
     'row_details': 'تفاصيل الصف',
     
@@ -29,12 +30,14 @@ translations = {
     
     # accounts_page 
     'add': 'إضافة',
-    'accounts_table_note': 'اضغط مرتين أو ضغطة مطولة لعرض تفاصيل الحساب',
+    'accounts_table_note': 'اضغط ضغطة واحدة لعرض تفاصيل الصناديق أو الحركات في الحساب',
     'transfer': 'تحويل',
     'account': 'الحساب',
     'balance': 'الرصيد',
     'box': 'صندوق',
     'log': 'حركة',
+    'yes': 'نعم',
+    'no': 'لا',
 
     # account_tabs_page
     'boxes': 'الصناديق',
@@ -43,6 +46,7 @@ translations = {
     'hide_account': 'اخفاء الحساب؟',
     'zakatable': 'الزكاة مفعلة؟',
     'back': 'رجوع',
+    'hide': 'مخفي',
 
     # boxes_page
     'date': 'التاريخ',
