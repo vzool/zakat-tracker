@@ -93,8 +93,53 @@ class ZakatLedger(toga.App):
         )
         self.main_window.content = self.main_box
 
-    def pay_page(self, widget):
-        print('pay_page')
+    def payment_part_row_widget(self, widget, account, balance):
+        row = toga.Box(style=Pack(direction=ROW, flex=1, text_direction=self.dir))
+        formatted_balance = format_number(balance)
+        number_input = toga.NumberInput(value=0, min=0, readonly=True, max=balance, step=0.01, style=Pack(text_direction=self.dir))
+        switch = toga.Switch(f'{account}({formatted_balance})', style=Pack(text_direction=self.dir))
+        def slider_updated(widget):
+            number_input.value = widget.value
+        # on_change=lambda e: number_input.value = e.value
+        slider = toga.Slider(enabled=True, value=0, range=(0, balance), style=Pack(flex=1, text_direction=self.dir))
+        row.add(switch)
+        row.add(slider)
+        row.add(number_input)
+        row.add(toga.Divider())
+        return row
+
+    def payment_parts_form(self, widget):
+        print('payment_parts_form')
+        print(self.zakat_plan)
+        brief = self.zakat_plan[1]
+        print('brief', brief)
+        _, _, demand = brief
+        print('demand', demand)
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        form_label = toga.Label(self.i18n.t('payment_parts_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.auto_pay_switch = toga.Switch(
+            self.i18n.t('auto_pay_switch'),
+            on_change=lambda e: self.config.set('load_from_cache_when_possible', e.value),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        page.add(form_label)
+        page.add(self.auto_pay_switch)
+
+        payment_parts = self.db.build_payment_parts(demand)
+        print('payment_parts', payment_parts)
+
+        # build form
+        self.payment_parts = []
+        parts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir, padding=12))
+        
+        for account, part in payment_parts['account'].items():
+            print(account, part)
+            parts_box.add(self.payment_part_row_widget(widget, account, part['balance']))
+            break
+        page.add(toga.ScrollContainer(content=parts_box, style=Pack(flex=1, text_direction=self.dir)))
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
+        page.add(back_button)
+        self.main_window.content = page
 
     def zakat_page(self):
         print('zakat_page')
@@ -106,7 +151,7 @@ class ZakatLedger(toga.App):
 
         # refresh_button
         def refresh_zakat_page(widget = None):
-            exists, stats, zakat = self.db.check(
+            self.zakat_plan = self.db.check(
                 silver_gram_price=self.config_silver_gram_price_in_local_currency,
                 nisab=ZakatTracker.Nisab(
                     self.config_silver_gram_price_in_local_currency,
@@ -115,6 +160,7 @@ class ZakatLedger(toga.App):
                 cycle=ZakatTracker.TimeCycle(self.config_haul_time_cycle_in_days),
                 debug=True,
             )
+            exists, stats, zakat = self.zakat_plan
             print(exists, stats, zakat)
             data = []
             total = 0
@@ -150,7 +196,7 @@ class ZakatLedger(toga.App):
                     page.clear()
                     self.pay_button = toga.Button(
                         self.i18n.t('pay') + f' {total}',
-                        on_press=self.pay_page,
+                        on_press=self.payment_parts_form,
                         style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
                     )
                     page.add(self.pay_button)
@@ -585,6 +631,7 @@ class ZakatLedger(toga.App):
         print('account_table_on_activate', f'access_key({access_key})')
         account = getattr(widget.selection, access_key)
         print('account_table_on_activate', account)
+        self.update_accounts(widget)
         self.account_tabs_page(widget, account)
 
     def account_table_on_activate(self, widget, row: toga.sources.list_source.Row):

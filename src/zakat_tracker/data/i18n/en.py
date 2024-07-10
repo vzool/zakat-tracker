@@ -9,6 +9,10 @@ translations = {
     'zakat': 'Zakat',
     'settings': 'Settings',
 
+    # payment_parts_form
+    'payment_parts_form_label': 'Form for Dividing Zakat Payments on Accounts',
+    'auto_pay_switch': 'Paying Zakat for each box from itself - Automated Mode',
+
     # zakat_page
     'refresh': 'Refresh',
     'pay': 'Pay',

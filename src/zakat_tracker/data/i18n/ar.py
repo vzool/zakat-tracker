@@ -9,6 +9,10 @@ translations = {
     'zakat': 'الزكاة',
     'settings': 'الاعدادات',
 
+    # payment_parts_form
+    'payment_parts_form_label': 'نموذج تقسيم الزكاة كدفعات على الحسابات',
+    'auto_pay_switch': 'دفع زكاة كل صندوق من نفس الصندوق - الوضع الآلي',
+
     # zakat_page
     'refresh': 'تحديث',
     'pay': 'ادفع',
