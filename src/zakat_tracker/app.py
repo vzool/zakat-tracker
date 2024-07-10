@@ -100,6 +100,7 @@ class ZakatLedger(toga.App):
         print('zakat_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
+        self.zakat_on_boxes_note = self.label_note_widget(self.i18n.t('zakat_on_boxes_note'))
         self.table_show_row_details_note = self.label_note_widget(self.i18n.t('table_show_row_details_note'))
         self.zakat_note = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
@@ -153,6 +154,7 @@ class ZakatLedger(toga.App):
                     page.add(self.pay_button)
                     refresh_zakat_page()
                     create_table()
+                    page.add(self.zakat_on_boxes_note)
                     page.add(self.table_show_row_details_note)
                     page.add(self.zakat_table)
                     self.zakat_table.data = data
@@ -190,6 +192,7 @@ class ZakatLedger(toga.App):
         create_table()
         refresh_zakat_page()
 
+        page.add(self.zakat_on_boxes_note)
         page.add(self.table_show_row_details_note)
         page.add(self.zakat_table)
 

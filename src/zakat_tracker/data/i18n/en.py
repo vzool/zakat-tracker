@@ -14,6 +14,7 @@ translations = {
     'pay': 'Pay',
     'below_nisab_note': 'Zakat due {} but the total {} is less than the Nisab {}',
     'table_show_row_details_note': 'Double tap or long press to view row details',
+    'zakat_on_boxes_note': 'Zakat is done on the boxes within each account, so the name is repeated',
     'due': 'Due',
     'row_details': 'Row Details',
     'exchange_rate': 'Exchange Rate',
