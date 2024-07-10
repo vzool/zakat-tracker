@@ -93,19 +93,36 @@ class ZakatLedger(toga.App):
         )
         self.main_window.content = self.main_box
 
-    def payment_part_row_widget(self, widget, account, balance):
-        row = toga.Box(style=Pack(direction=ROW, flex=1, text_direction=self.dir))
+    def pay(self, widget):
+        print('pay')
+
+    def payment_part_row_widget(self, widget, account, balance, rate):
+        row = toga.Box(style=Pack(direction=ROW, padding=15, text_direction=self.dir))
         formatted_balance = format_number(balance)
-        number_input = toga.NumberInput(value=0, min=0, readonly=True, max=balance, step=0.01, style=Pack(text_direction=self.dir))
-        switch = toga.Switch(f'{account}({formatted_balance})', style=Pack(text_direction=self.dir))
-        def slider_updated(widget):
-            number_input.value = widget.value
-        # on_change=lambda e: number_input.value = e.value
-        slider = toga.Slider(enabled=True, value=0, range=(0, balance), style=Pack(flex=1, text_direction=self.dir))
+        def number_input_updated(widget):
+            self.supply = 0
+            for (switch, slider, number_input, rate) in self.payment_parts.values():
+                slider.value = number_input.value
+                self.supply += ZakatTracker.exchange_calc(
+                    x=float(number_input.value) * int(switch.value),
+                    x_rate=float(rate),
+                    y_rate=1,
+                ) 
+            self.demand_meter.text = f'{self.supply} / {self.demand}'
+            self.apply_payment_parts_button.enabled = self.supply == self.demand
+        number_input = toga.NumberInput(value=0, min=0, max=balance, step=0.01, on_change=number_input_updated, readonly=True, style=Pack(text_direction=self.dir))
+        slider = toga.Slider(enabled=False, value=0, range=(0, balance), style=Pack(flex=1, text_direction=self.dir))
+        def slider_enabled(widget):
+            slider.enabled = widget.value
+            number_input.readonly = not widget.value
+            number_input.value = 0
+            if not widget.value:
+                slider.value = 0
+        switch = toga.Switch(f'{account}({formatted_balance})', on_change=slider_enabled, style=Pack(text_direction=self.dir))
+        self.payment_parts[account] = (switch, slider, number_input, rate)
         row.add(switch)
         row.add(slider)
         row.add(number_input)
-        row.add(toga.Divider())
         return row
 
     def payment_parts_form(self, widget):
@@ -113,29 +130,48 @@ class ZakatLedger(toga.App):
         print(self.zakat_plan)
         brief = self.zakat_plan[1]
         print('brief', brief)
-        _, _, demand = brief
-        print('demand', demand)
+        _, _, self.demand = brief
+        print('demand', self.demand)
+        self.payment_parts = {}
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         form_label = toga.Label(self.i18n.t('payment_parts_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.apply_payment_parts_button = toga.Button(self.i18n.t('apply_payment_parts'), on_press=self.pay, enabled=False, style=Pack(flex=1, text_direction=self.dir))
+        self.demand_meter = toga.Label(f'0 / {self.demand}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=24, text_direction=self.dir))
+
+        def auto_pay_switch(widget):
+            self.apply_payment_parts_button.enabled = widget.value
+            if widget.value:
+                self.supply = self.demand
+                self.demand_meter.text = f'{self.supply} / {self.demand}'
+            else:
+                self.demand_meter.text = f'0 / {self.demand}'
+            for (switch, slider, _, _) in self.payment_parts.values():
+                switch.enabled = not widget.value
+                switch.value = False
+                if not switch.enabled:
+                    slider.value = 0
+                    self.supply = 0
         self.auto_pay_switch = toga.Switch(
             self.i18n.t('auto_pay_switch'),
-            on_change=lambda e: self.config.set('load_from_cache_when_possible', e.value),
+            on_change=auto_pay_switch,
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
         page.add(form_label)
+        page.add(self.demand_meter)
+        page.add(self.apply_payment_parts_button)
         page.add(self.auto_pay_switch)
 
-        payment_parts = self.db.build_payment_parts(demand)
+        payment_parts = self.db.build_payment_parts(self.demand)
         print('payment_parts', payment_parts)
 
         # build form
-        self.payment_parts = []
         parts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir, padding=12))
         
+        parts_box.add(toga.Divider())
         for account, part in payment_parts['account'].items():
             print(account, part)
-            parts_box.add(self.payment_part_row_widget(widget, account, part['balance']))
-            break
+            parts_box.add(self.payment_part_row_widget(widget, account, part['balance'], part['rate']))
+            parts_box.add(toga.Divider())
         page.add(toga.ScrollContainer(content=parts_box, style=Pack(flex=1, text_direction=self.dir)))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         page.add(back_button)

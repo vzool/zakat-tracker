@@ -11,6 +11,7 @@ translations = {
 
     # payment_parts_form
     'payment_parts_form_label': 'Form for Dividing Zakat Payments on Accounts',
+    'apply_payment_parts': 'Apply Payment Parts',
     'auto_pay_switch': 'Paying Zakat for each box from itself - Automated Mode',
 
     # zakat_page

@@ -11,6 +11,7 @@ translations = {
 
     # payment_parts_form
     'payment_parts_form_label': 'نموذج تقسيم الزكاة كدفعات على الحسابات',
+    'apply_payment_parts': 'تطبيق دفعات الزكاة',
     'auto_pay_switch': 'دفع زكاة كل صندوق من نفس الصندوق - الوضع الآلي',
 
     # zakat_page
