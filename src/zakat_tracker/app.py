@@ -105,7 +105,7 @@ class ZakatLedger(toga.App):
                 _, _, number_input, _ = widgets
                 self.payment_parts['account'][account]['part'] = number_input.value
             print(self.payment_parts)
-            valid_payment_parts =  self.db.check_payment_parts(self.payment_parts)
+            valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=True)
             print('valid_payment_parts', valid_payment_parts)
             if valid_payment_parts != 0:
                 self.main_window.error_dialog(
@@ -123,7 +123,8 @@ class ZakatLedger(toga.App):
             return
             
         # self.db.save()
-        self.main_window.content = self.account_tabs
+        self.refresh_zakat_page(widget)
+        self.main_window.content = self.main_box
         self.main_window.info_dialog(
             self.i18n.t('operation_accomplished_successfully'),
             self.i18n.t('message_status'),
@@ -149,7 +150,7 @@ class ZakatLedger(toga.App):
                     x=float(number_input.value) * int(switch.value),
                     x_rate=float(rate),
                     y_rate=1,
-                ) 
+                )
             self.demand_meter.text = f'{self.supply} / {self.demand}'
             self.apply_payment_parts_button.enabled = self.supply == self.demand
         number_input = toga.NumberInput(value=0, min=0, max=balance, step=0.01, on_change=number_input_updated, readonly=True, style=Pack(text_direction=self.dir))
@@ -173,6 +174,8 @@ class ZakatLedger(toga.App):
         print('brief', brief)
         _, _, self.demand = brief
         print('demand', self.demand)
+        self.demand = round(self.demand, 2)
+        print('demand', self.demand)
         self.payment_parts_widgets = {}
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         form_label = toga.Label(self.i18n.t('payment_parts_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -190,9 +193,8 @@ class ZakatLedger(toga.App):
                 if widget.value:
                     for part in self.zakat_plan[2][account].values():
                         print('part', part)
-                        total = part['below_nisab'] if 'below_nisab' in part else part['total']
-                        progress_bar.value = float(progress_bar.value) + total
-                        number_input.value = float(number_input.value) + total
+                        progress_bar.value = float(progress_bar.value) + part['total']
+                        number_input.value = float(number_input.value) + part['total']
             self.apply_payment_parts_button.enabled = widget.value
             if widget.value:
                 self.supply = self.demand
@@ -233,9 +235,11 @@ class ZakatLedger(toga.App):
         self.zakat_on_boxes_note = self.label_note_widget(self.i18n.t('zakat_on_boxes_note'))
         self.table_show_row_details_note = self.label_note_widget(self.i18n.t('table_show_row_details_note'))
         self.zakat_note = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.zakat_has_just_calculated = False
 
         # refresh_button
         def refresh_zakat_page(widget = None):
+            self.update_accounts(widget)
             self.zakat_plan = self.db.check(
                 silver_gram_price=self.config_silver_gram_price_in_local_currency,
                 nisab=ZakatTracker.Nisab(
@@ -251,22 +255,15 @@ class ZakatLedger(toga.App):
             total = 0
             for account, x in zakat.items():
                 for _, y in x.items():
-                    z = 0
-                    count = 1
-                    if 'below_nisab' in y:
-                        z = y['below_nisab']
-                    else:
-                        z = y['total']
-                        count = y['count']
-                    total += z
+                    total += y['total']
                     data.append((
                         ZakatTracker.time_to_datetime(y['box_time']),
                         y['box_log'],
                         account,
                         format_number(y['box_capital']),
                         format_number(y['box_rest']),
-                        format_number(z),
-                        format_number(count),
+                        format_number(y['total']),
+                        format_number(y['count']),
                         format_number(y['exchange_rate']),
                         ZakatTracker.time_to_datetime(y['exchange_time']),
                         y['exchange_desc'],
@@ -297,9 +294,19 @@ class ZakatLedger(toga.App):
                 total_str = format_number(round(stats[1], 2))
                 nisab_str = format_number(round(self.nisab, 2))
                 self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
-                page.add(self.zakat_note)
-                page.add(toga.Divider())
+                if self.zakat_has_just_calculated:
+                    print('--------- OK ---------')
+                    self.db.export_json('/Users/vzool/Workspace/beeware-tutorial/zakat-tracker/data.json')
+                    return
+                if hasattr(self, 'pay_button'):
+                    print('--------- HIT ---------')
+                    page.replace(self.pay_button, self.zakat_note)
+                    self.zakat_has_just_calculated = True
+                else:
+                    page.add(self.zakat_note)
+                    page.add(toga.Divider())
                 
+        self.refresh_zakat_page = refresh_zakat_page
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         def create_table():
