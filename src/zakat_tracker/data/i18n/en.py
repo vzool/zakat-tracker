@@ -9,9 +9,13 @@ translations = {
     'zakat': 'Zakat',
     'settings': 'Settings',
 
+    # pay
+    'invalid_payment_parts': 'Distribution of Deductions is Invalid',
+    'operation_failed': 'Operation Failed',
+
     # payment_parts_form
-    'payment_parts_form_label': 'Form for Dividing Zakat Payments on Accounts',
-    'apply_payment_parts': 'Apply Payment Parts',
+    'payment_parts_form_label': 'Form for Deducting Zakat from Specific Accounts',
+    'apply_payment_parts': 'Apply Zakat Deductions',
     'auto_pay_switch': 'Paying Zakat for each box from itself - Automated Mode',
 
     # zakat_page

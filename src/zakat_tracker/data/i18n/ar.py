@@ -8,10 +8,14 @@ translations = {
     'accounts': 'الحسابات',
     'zakat': 'الزكاة',
     'settings': 'الاعدادات',
+ 
+    # pay
+    'invalid_payment_parts': 'توزيع الخصومات غير صالح',
+    'operation_failed': 'فشلت العملية',
 
     # payment_parts_form
-    'payment_parts_form_label': 'نموذج تقسيم الزكاة كدفعات على الحسابات',
-    'apply_payment_parts': 'تطبيق دفعات الزكاة',
+    'payment_parts_form_label': 'نموذج خصم الزكاة من حسابات محددة',
+    'apply_payment_parts': 'تطبيق خصم الزكاة',
     'auto_pay_switch': 'دفع زكاة كل صندوق من نفس الصندوق - الوضع الآلي',
 
     # zakat_page
