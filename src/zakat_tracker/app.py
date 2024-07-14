@@ -122,7 +122,7 @@ class ZakatLedger(toga.App):
             )
             return
             
-        # self.db.save()
+        self.db.save()
         self.refresh_zakat_page(widget)
         self.main_window.content = self.main_box
         self.main_window.info_dialog(
@@ -235,6 +235,7 @@ class ZakatLedger(toga.App):
         self.zakat_on_boxes_note = self.label_note_widget(self.i18n.t('zakat_on_boxes_note'))
         self.table_show_row_details_note = self.label_note_widget(self.i18n.t('table_show_row_details_note'))
         self.zakat_note = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.zakat_note_divider = toga.Divider()
         self.zakat_has_just_calculated = False
 
         # refresh_button
@@ -296,7 +297,6 @@ class ZakatLedger(toga.App):
                 self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
                 if self.zakat_has_just_calculated:
                     print('--------- OK ---------')
-                    self.db.export_json('/Users/vzool/Workspace/beeware-tutorial/zakat-tracker/data.json')
                     return
                 if hasattr(self, 'pay_button'):
                     print('--------- HIT ---------')
@@ -304,7 +304,7 @@ class ZakatLedger(toga.App):
                     self.zakat_has_just_calculated = True
                 else:
                     page.add(self.zakat_note)
-                    page.add(toga.Divider())
+                    page.add(self.zakat_note_divider)
                 
         self.refresh_zakat_page = refresh_zakat_page
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -661,9 +661,9 @@ class ZakatLedger(toga.App):
             format_number(v['rest']),
             format_number(v['capital']),
             format_number(v['count']),
-            v['last'],
-            format_number(v['total'],
-        )) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
+            ZakatTracker.time_to_datetime(v['last']) if v['last'] else '-',
+            format_number(v['total']),
+        ) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
 
     def logs_table_items(self, account: str):
         return [(
