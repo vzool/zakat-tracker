@@ -244,7 +244,9 @@ class ZakatLedger(toga.App):
         self.zakat_on_boxes_note = self.label_note_widget(self.i18n.t('zakat_on_boxes_note'))
         self.table_show_row_details_note = self.label_note_widget(self.i18n.t('table_show_row_details_note'))
         self.zakat_note = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        self.zakat_note_divider = toga.Divider()
+        #self.zakat_note_divider = toga.Divider()
+        self.zakat_before_note_divider = toga.Divider()
+        self.zakat_after_note_divider = toga.Divider()
         self.zakat_has_just_calculated = False
 
         # refresh_button
@@ -294,8 +296,10 @@ class ZakatLedger(toga.App):
                     page.add(self.pay_button)
                     refresh_zakat_page()
                     create_table()
+                    page.add(self.zakat_before_note_divider)
                     page.add(self.zakat_on_boxes_note)
                     page.add(self.table_show_row_details_note)
+                    page.add(self.zakat_after_note_divider)
                     page.add(self.zakat_table)
                     self.zakat_table.data = data
                     page.add(self.refresh_button)
@@ -313,7 +317,7 @@ class ZakatLedger(toga.App):
                     self.zakat_has_just_calculated = True
                 else:
                     page.add(self.zakat_note)
-                    page.add(self.zakat_note_divider)
+                    # page.add(self.zakat_note_divider)
                 
         self.refresh_zakat_page = refresh_zakat_page
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -343,8 +347,10 @@ class ZakatLedger(toga.App):
         create_table()
         refresh_zakat_page()
 
+        page.add(self.zakat_before_note_divider)
         page.add(self.zakat_on_boxes_note)
         page.add(self.table_show_row_details_note)
+        page.add(self.zakat_after_note_divider)
         page.add(self.zakat_table)
 
         page.add(self.refresh_button)
