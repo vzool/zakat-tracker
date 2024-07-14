@@ -43,8 +43,15 @@ class ZakatLedger(toga.App):
             title=self.i18n.t('formal_name'),
             size=(800, 600),
         )
+        self._original_title = self.main_window.title
         self.main_tabs_page()
         self.main_window.show()
+
+    def title(self, text: str = None):
+        if text:
+            self.main_window.title = f'{self._original_title} - {text}'
+        else:
+            self.main_window.title = self._original_title
 
     # loaders
 
@@ -191,6 +198,8 @@ class ZakatLedger(toga.App):
                 progress_bar.value = 0
                 number_input.value = 0
                 if widget.value:
+                    if account not in self.zakat_plan[2]:
+                        continue
                     for part in self.zakat_plan[2][account].values():
                         print('part', part)
                         progress_bar.value = float(progress_bar.value) + part['total']
@@ -496,12 +505,15 @@ class ZakatLedger(toga.App):
             ],
             style=Pack(direction=ROW, padding=5, text_direction=self.dir),
         ))
+        page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('accounts_table_note')))
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
+        page.add(toga.Divider())
         page.add(self.accounts_table)
         return page
 
     def account_tabs_page(self, widget, account):
+        self.title(account)
         tabs = toga.OptionContainer(
             content=[
                 (self.i18n.t('boxes'), self.boxes_page(widget, account), toga.Icon("resources/icon/boxes.png")),
@@ -928,6 +940,7 @@ class ZakatLedger(toga.App):
 
     def goto_main_page(self, widget):
         print('cancel')
+        self.title()
         self.main_window.content = self.main_box
 
     def update_accounts(self, widget):
