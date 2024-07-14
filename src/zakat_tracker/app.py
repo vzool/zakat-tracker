@@ -85,9 +85,9 @@ class ZakatLedger(toga.App):
         print('main_tabs_page')
         self.main_box = toga.OptionContainer(
             content=[
-                (self.i18n.t('accounts'), self.accounts_page()),
-                (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("pasta")),
-                (self.i18n.t('settings'), self.settings_page()),
+                (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
+                (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("resources/icon/zakat.png")),
+                (self.i18n.t('settings'), self.settings_page(), toga.Icon("resources/icon/settings.png")),
             ],
             style=Pack(text_direction=self.dir),
         )
@@ -504,9 +504,9 @@ class ZakatLedger(toga.App):
     def account_tabs_page(self, widget, account):
         tabs = toga.OptionContainer(
             content=[
-                (self.i18n.t('boxes'), self.boxes_page(widget, account)),
-                (self.i18n.t('logs'), self.logs_page(widget, account), toga.Icon("pasta")),
-                (self.i18n.t('exchanges'), self.exchanges_page(widget, account)),
+                (self.i18n.t('boxes'), self.boxes_page(widget, account), toga.Icon("resources/icon/boxes.png")),
+                (self.i18n.t('logs'), self.logs_page(widget, account), toga.Icon("resources/icon/logs.png")),
+                (self.i18n.t('exchanges'), self.exchanges_page(widget, account), toga.Icon("resources/icon/exchange_rates.png")),
             ],
             style=Pack(flex=1, text_direction=self.dir),
         )
