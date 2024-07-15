@@ -26,6 +26,7 @@ def format_number(x) -> str:
 class ZakatLedger(toga.App):
     def startup(self):
 
+        self.debug = False
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
         self.datetime_supported = self.os in ['android', 'windows']
@@ -132,10 +133,11 @@ class ZakatLedger(toga.App):
                     self.config_silver_nisab_gram_quantity,
                 ),
                 cycle=ZakatTracker.TimeCycle(self.config_haul_time_cycle_in_days),
-                debug=True,
+                debug=self.debug,
             )
             exists, stats, zakat = self.zakat_plan
-            print(exists, stats, zakat)
+            if self.debug:
+                print(exists, stats, zakat)
             data = []
             total = 0
             for account, x in zakat.items():
@@ -158,11 +160,11 @@ class ZakatLedger(toga.App):
             
             if exists:
                 if hasattr(self, 'pay_button'):
-                    self.pay_button.text = self.i18n.t('pay') + f' {total}'
+                    self.pay_button.text = self.i18n.t('pay') + f' {format_number(total)}'
                 else:
                     page.clear()
                     self.pay_button = toga.Button(
-                        self.i18n.t('pay') + f' {total}',
+                        self.i18n.t('pay') + f' {format_number(total)}',
                         on_press=self.payment_parts_form,
                         style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
                     )
@@ -237,7 +239,7 @@ class ZakatLedger(toga.App):
                 return
             print('confirmed')
             try:
-                if self.db.recall(dry=False, debug=True):
+                if self.db.recall(dry=False, debug=self.debug):
                     self.refresh(widget)
                     self.main_window.info_dialog(
                         self.i18n.t('message_status'),
@@ -307,9 +309,10 @@ class ZakatLedger(toga.App):
 
         file_name, download_url, upload_url, server_thread, shutdown_server = start_file_server(
             self.db_path,
+            upload_dir_path=self.paths.data,
             database_callback=database_callback,
             csv_callback=csv_callback,
-            debug=True,
+            debug=self.debug,
         )
         def back_button_action(widget):
             shutdown_server()
@@ -868,7 +871,8 @@ class ZakatLedger(toga.App):
 
     def payment_parts_form(self, widget):
         print('payment_parts_form')
-        print(self.zakat_plan)
+        if self.debug:
+            print(self.zakat_plan)
         brief = self.zakat_plan[1]
         print('brief', brief)
         _, _, self.demand = brief
@@ -879,11 +883,12 @@ class ZakatLedger(toga.App):
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         form_label = toga.Label(self.i18n.t('payment_parts_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         self.apply_payment_parts_button = toga.Button(self.i18n.t('apply_payment_parts'), on_press=self.pay, enabled=False, style=Pack(flex=1, text_direction=self.dir))
-        self.demand_meter = toga.Label(f'0 / {self.demand}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=24, text_direction=self.dir))
+        self.demand_meter = toga.Label(f'0 / {format_number(self.demand)}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=24, text_direction=self.dir))
 
         def auto_pay_switch(widget):
             for account, widgets in self.payment_parts_widgets.items():
-                print('---------- account ----------', account)
+                if self.debug:
+                    print('---------- account ----------', account)
                 switch, progress_bar, number_input, _ = widgets
                 switch.enabled = not widget.value
                 switch.value = False
@@ -893,15 +898,16 @@ class ZakatLedger(toga.App):
                     if account not in self.zakat_plan[2]:
                         continue
                     for part in self.zakat_plan[2][account].values():
-                        print('part', part)
+                        if self.debug:
+                            print('part', part)
                         progress_bar.value = float(progress_bar.value) + part['total']
                         number_input.value = float(number_input.value) + part['total']
             self.apply_payment_parts_button.enabled = widget.value
             if widget.value:
                 self.supply = self.demand
-                self.demand_meter.text = f'{self.supply} / {self.demand}'
+                self.demand_meter.text = f'{format_number(self.supply)} / {format_number(self.demand)}'
             else:
-                self.demand_meter.text = f'0 / {self.demand}'
+                self.demand_meter.text = f'0 / {format_number(self.demand)}'
 
         self.auto_pay_switch = toga.Switch(
             self.i18n.t('auto_pay_switch'),
@@ -914,14 +920,16 @@ class ZakatLedger(toga.App):
         page.add(self.auto_pay_switch)
 
         self.payment_parts = self.db.build_payment_parts(self.demand)
-        print('payment_parts', self.payment_parts)
+        if self.debug:
+            print('payment_parts', self.payment_parts)
 
         # build form
         parts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir, padding=12))
         
         parts_box.add(toga.Divider())
         for account, part in self.payment_parts['account'].items():
-            print(account, part)
+            if self.debug:
+                print(account, part)
             parts_box.add(self.payment_part_row_widget(widget, account, part['balance'], part['rate']))
             parts_box.add(toga.Divider())
         page.add(toga.ScrollContainer(content=parts_box, style=Pack(flex=1, text_direction=self.dir)))
@@ -1126,22 +1134,24 @@ class ZakatLedger(toga.App):
                 ok = False
                 if self.auto_pay_switch.value:
                     print('apply(auto)')
-                    ok = self.db.zakat(self.zakat_plan, debug=True)
+                    ok = self.db.zakat(self.zakat_plan, debug=self.debug)
                 else:
                     print('apply(parts)')
                     for account, widgets in self.payment_parts_widgets.items():
                         _, _, number_input, _ = widgets
                         self.payment_parts['account'][account]['part'] = number_input.value
-                    print(self.payment_parts)
-                    valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=True)
-                    print('valid_payment_parts', valid_payment_parts)
+                    if self.debug:
+                        print(self.payment_parts)
+                    valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=self.debug)
+                    if self.debug:
+                        print('valid_payment_parts', valid_payment_parts)
                     if valid_payment_parts != 0:
                         self.main_window.error_dialog(
                             self.i18n.t('data_error'),
                             self.i18n.t('invalid_payment_parts'),
                         )
                         return
-                    ok = self.db.zakat(self.zakat_plan, parts=self.payment_parts, debug=True)
+                    ok = self.db.zakat(self.zakat_plan, parts=self.payment_parts, debug=self.debug)
 
                 if not ok:
                     self.main_window.error_dialog(
@@ -1189,7 +1199,7 @@ class ZakatLedger(toga.App):
             )
             return
         try:
-            self.db.exchange(account, created=ZakatTracker.time(datetime_value), rate=rate, description=desc, debug=True)
+            self.db.exchange(account, created=ZakatTracker.time(datetime_value), rate=rate, description=desc, debug=self.debug)
             self.update_exchanges(widget, account)
             self.db.save()
             self.main_window.content = self.account_tabs
@@ -1324,7 +1334,7 @@ class ZakatLedger(toga.App):
                     x_rate=float(rate),
                     y_rate=1,
                 )
-            self.demand_meter.text = f'{self.supply} / {self.demand}'
+            self.demand_meter.text = f'{format_number(self.supply)} / {format_number(self.demand)}'
             self.apply_payment_parts_button.enabled = self.supply == self.demand
         number_input = toga.NumberInput(value=0, min=0, max=balance, step=0.01, on_change=number_input_updated, readonly=True, style=Pack(text_direction=self.dir))
         progress_bar = toga.ProgressBar(value=0, max=balance, style=Pack(flex=1, text_direction=self.dir))

@@ -51,7 +51,7 @@ def find_available_port() -> int:
         return s.server_address[1]
 
 
-def start_file_server(database_path: str, database_callback: callable = None, csv_callback: callable = None,
+def start_file_server(database_path: str, upload_dir_path: str = '.', database_callback: callable = None, csv_callback: callable = None,
                       debug: bool = False) -> tuple:
     """
     Starts a multi-purpose HTTP server to manage file interactions for a Zakat application.
@@ -165,7 +165,7 @@ def start_file_server(database_path: str, database_callback: callable = None, cs
                     print(f'Uploaded filename: {filename}')
 
                 # 4. Define Storage Path for CSV
-                upload_directory = "./uploads"  # Create this directory if it doesn't exist
+                upload_directory = f'{upload_dir_path}/uploads'  # Create this directory if it doesn't exist
                 os.makedirs(upload_directory, exist_ok=True)
                 file_path = os.path.join(upload_directory, upload_type)
 
