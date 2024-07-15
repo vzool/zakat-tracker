@@ -55,6 +55,7 @@ translations = {
 
     # data_management_page
     'show_data': 'Show Data',
+    'show_raw_data': 'Show Raw Data',
     
     # settings_page
     'language': 'Language',

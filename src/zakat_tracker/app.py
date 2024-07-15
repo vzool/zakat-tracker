@@ -12,6 +12,7 @@ from zakat import ZakatTracker, JSONEncoder
 from datetime import datetime
 from .i18n import i18n, Lang
 from .config import Config
+from .neknaj_jsonviewer import json_viewer
 import pathlib
 import json
 
@@ -297,8 +298,12 @@ class ZakatLedger(toga.App):
         web_view = toga.WebView(style=Pack(flex=1, text_direction=self.dir))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_data_management_page, style=Pack(flex=1, text_direction=self.dir))
 
-        data = json.dumps(self.db.box(), indent=4, cls=JSONEncoder)
-        web_view.set_content('http://localhost', f"<pre>{data}</pre>")
+        data = json.dumps(self.db.box(), indent=4 if self.show_raw_data_switch.value else None, cls=JSONEncoder)
+
+        if self.show_raw_data_switch.value:
+            web_view.set_content('http://localhost', f"<pre>{data}</pre>")
+        else:
+            web_view.set_content('http://localhost', json_viewer(data))
 
         page.add(web_view)
         page.add(back_button)
@@ -310,11 +315,12 @@ class ZakatLedger(toga.App):
 
     def data_management_page(self, widget):
         print('data_management_page')
+        self.title(self.i18n.t('data_management'))
         self.main_data_management_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
-        page_label = toga.Label(self.i18n.t('data_management'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         show_data_button = toga.Button(self.i18n.t('show_data'), on_press=self.show_data_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        self.main_data_management_page.add(page_label)
+        self.show_raw_data_switch = toga.Switch(self.i18n.t('show_raw_data'))
+        self.main_data_management_page.add(self.show_raw_data_switch)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(show_data_button)
         self.main_data_management_page.add(toga.Divider())
