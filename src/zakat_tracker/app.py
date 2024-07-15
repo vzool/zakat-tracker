@@ -101,6 +101,12 @@ class ZakatLedger(toga.App):
         )
         self.main_window.content = self.main_box
 
+    def refresh(self, widget):
+        print('refresh')
+        self.update_accounts(widget)
+        self.refresh_zakat_page()
+        self.update_history(widget)
+
     def zakat_page(self):
         print('zakat_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -184,7 +190,7 @@ class ZakatLedger(toga.App):
                     # page.add(self.zakat_note_divider)
                 
         self.refresh_zakat_page = refresh_zakat_page
-        self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         def create_table():
             self.zakat_table = toga.Table(
@@ -222,24 +228,34 @@ class ZakatLedger(toga.App):
 
     def recover(self, widget):
         print('recover')
-        try:
-            if self.db.recall(dry=False, debug=True):
-                self.update_history(widget)
-                self.main_window.info_dialog(
-                    self.i18n.t('message_status'),
-                    self.i18n.t('recover_success'),
-                )
+        def on_result(window, confirmed):
+            if not confirmed:
+                print('cancelled')
                 return
-            self.main_window.error_dialog(
-                self.i18n.t('message_status'),
-                self.i18n.t('recover_failed'),
-            )
-        except Exception as e:
-            print(f'Error in recover: {e}')
-            self.main_window.error_dialog(
-                self.i18n.t('unexpected_error'),
-                str(e),
-            )
+            print('confirmed')
+            try:
+                if self.db.recall(dry=False, debug=True):
+                    self.update_history(widget)
+                    self.main_window.info_dialog(
+                        self.i18n.t('message_status'),
+                        self.i18n.t('recover_success'),
+                    )
+                    return
+                self.main_window.error_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('recover_failed'),
+                )
+            except Exception as e:
+                print(f'Error in recover: {e}')
+                self.main_window.error_dialog(
+                    self.i18n.t('unexpected_error'),
+                    str(e),
+                )
+        self.main_window.confirm_dialog(
+            self.i18n.t('recover_confirm_title'),
+            self.i18n.t('recover_confirm_message'),
+            on_result=on_result,
+        )
 
     def history_page(self):
         print('history_page')
@@ -271,6 +287,7 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('history_note_3')))
         page.add(toga.Divider())
         page.add(self.history_table)
+        page.add(toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir)))
         return page
 
     def settings_page(self):
@@ -433,6 +450,7 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
         page.add(self.accounts_table)
+        page.add(toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir)))
         return page
 
     def history_details_page(self, widget, ref):
@@ -1012,47 +1030,56 @@ class ZakatLedger(toga.App):
 
     def pay(self, widget):
         print('pay')
-        ok = False
-        if self.auto_pay_switch.value:
-            print('apply(auto)')
-            ok = self.db.zakat(self.zakat_plan, debug=True)
-        else:
-            print('apply(parts)')
-            for account, widgets in self.payment_parts_widgets.items():
-                _, _, number_input, _ = widgets
-                self.payment_parts['account'][account]['part'] = number_input.value
-            print(self.payment_parts)
-            valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=True)
-            print('valid_payment_parts', valid_payment_parts)
-            if valid_payment_parts != 0:
-                self.main_window.error_dialog(
-                    self.i18n.t('data_error'),
-                    self.i18n.t('invalid_payment_parts'),
-                )
-                return
-            ok = self.db.zakat(self.zakat_plan, parts=self.payment_parts, debug=True)
+        def on_result(window, confirmed):
+            try:
+                if not confirmed:
+                    print('cancelled')
+                    return
+                print('confirmed')
+                ok = False
+                if self.auto_pay_switch.value:
+                    print('apply(auto)')
+                    ok = self.db.zakat(self.zakat_plan, debug=True)
+                else:
+                    print('apply(parts)')
+                    for account, widgets in self.payment_parts_widgets.items():
+                        _, _, number_input, _ = widgets
+                        self.payment_parts['account'][account]['part'] = number_input.value
+                    print(self.payment_parts)
+                    valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=True)
+                    print('valid_payment_parts', valid_payment_parts)
+                    if valid_payment_parts != 0:
+                        self.main_window.error_dialog(
+                            self.i18n.t('data_error'),
+                            self.i18n.t('invalid_payment_parts'),
+                        )
+                        return
+                    ok = self.db.zakat(self.zakat_plan, parts=self.payment_parts, debug=True)
 
-        if not ok:
-            self.main_window.error_dialog(
-                self.i18n.t('message_status'),
-                self.i18n.t('operation_failed'),
-            )
-            return
-            
-        self.db.save()
-        self.refresh_zakat_page(widget)
-        self.main_window.content = self.main_box
-        self.main_window.info_dialog(
-            self.i18n.t('message_status'),
-            self.i18n.t('operation_accomplished_successfully'),
+                if not ok:
+                    self.main_window.error_dialog(
+                        self.i18n.t('message_status'),
+                        self.i18n.t('operation_failed'),
+                    )
+                    return
+                    
+                self.db.save()
+                self.refresh_zakat_page(widget)
+                self.main_window.content = self.main_box
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('operation_accomplished_successfully'),
+                )   
+            except Exception as e:
+                self.main_window.error_dialog(
+                    self.i18n.t('unexpected_error'),
+                    str(e),
+                )
+        self.main_window.confirm_dialog(
+            self.i18n.t('recover_confirm_title'),
+            self.i18n.t('recover_confirm_message'),
+            on_result=on_result,
         )
-        try:
-            pass    
-        except Exception as e:
-            self.main_window.error_dialog(
-                self.i18n.t('unexpected_error'),
-                str(e),
-            )
 
     def exchange(self, widget, account):
         print('exchange', account)

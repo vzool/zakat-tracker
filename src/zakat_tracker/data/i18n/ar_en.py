@@ -19,6 +19,10 @@ translations = {
     'value': 'القيمة (Value)',
     'math': 'العملية الرياضية (Math)',
 
+    # recover
+    'recover_confirm_title': 'احذر ولا تتسرع',
+    'recover_confirm_message': 'هل ترغب بالفعل في تنفيذ هذه العملية؟',
+
     # history_page
     'history_button': 'استرجاع خطوة واحدة',
     'history_note_1': 'يتم تخزين البيانات بتسلسل زمني بطريقة مشابهة للبلوك شين',

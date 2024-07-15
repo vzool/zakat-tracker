@@ -19,6 +19,10 @@ translations = {
     'value': 'Value',
     'math': 'Math Operation',
 
+    # recover
+    'recover_confirm_title': 'Be careful, No Rush',
+    'recover_confirm_message': 'Do you want to perform this operation?',
+
     # history_page
     'history_button': 'One Step Recovery',
     'history_note_1': 'Data is stored chronologically like a blockchain',
