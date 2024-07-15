@@ -7,7 +7,26 @@ translations = {
     # main_tabs_page
     'accounts': 'الحسابات (Accounts)',
     'zakat': 'الزكاة (Zakat)',
+    'history': 'التاريخ (History)',
     'settings': 'الاعدادات (Settings)',
+
+    # history_details_page
+    'history_details_page_label': 'عرض تفاصيل الخطوة {}',
+    'history_details_page_title': 'خطوة بتاريخ {}',
+    'action': 'الحركة (Action)',
+    'file': 'الملف (File)',
+    'key': 'المفتاح (Key)',
+    'value': 'القيمة (Value)',
+    'math': 'العملية الرياضية (Math)',
+
+    # history_page
+    'history_button': 'استرجاع خطوة واحدة',
+    'history_note_1': 'يتم تخزين البيانات بتسلسل زمني بطريقة مشابهة للبلوك شين',
+    'history_note_2': 'كل خطوة فيها عدد من العمليات، يمكن الاطلاع على تفاصيل كل خطوة',
+    'history_note_3': 'العملية غير قابلة للإلغاء، يرجى التأكد جيدا قبل تنفيذ عملية الاسترجاع',
+    'ref': 'المرجع',
+    'recover_success': 'نجحت عملية الاسترجاع بنجاح',
+    'recover_failed': 'فشلت عملية الاسترجاع',
 
     # pay
     'invalid_payment_parts': 'توزيع الخصومات غير صالح',

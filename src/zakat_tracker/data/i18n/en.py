@@ -7,7 +7,26 @@ translations = {
     # main_tabs_page
     'accounts': 'Accounts',
     'zakat': 'Zakat',
+    'history': 'History',
     'settings': 'Settings',
+
+    # history_details_page
+    'history_details_page_label': 'Show Step {} Transactions',
+    'history_details_page_title': 'Step on {}',
+    'action': 'Action',
+    'file': 'File',
+    'key': 'Key',
+    'value': 'Value',
+    'math': 'Math Operation',
+
+    # history_page
+    'history_button': 'One Step Recovery',
+    'history_note_1': 'Data is stored chronologically like a blockchain',
+    'history_note_2': 'Each step includes many operations. Click to view Details',
+    'history_note_3': 'The is non-cancellable, check carefully before do the recovery',
+    'ref': 'Reference',
+    'recover_success': 'The recovery operation was successful',
+    'recover_failed': 'The restore operation failed',
 
     # pay
     'invalid_payment_parts': 'Distribution of Deductions is Invalid',

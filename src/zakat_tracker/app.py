@@ -94,148 +94,12 @@ class ZakatLedger(toga.App):
             content=[
                 (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
                 (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("resources/icon/zakat.png")),
+                (self.i18n.t('history'), self.history_page(), toga.Icon("resources/icon/history.png")),
                 (self.i18n.t('settings'), self.settings_page(), toga.Icon("resources/icon/settings.png")),
             ],
             style=Pack(text_direction=self.dir),
         )
         self.main_window.content = self.main_box
-
-    def pay(self, widget):
-        print('pay')
-        ok = False
-        if self.auto_pay_switch.value:
-            print('apply(auto)')
-            ok = self.db.zakat(self.zakat_plan, debug=True)
-        else:
-            print('apply(parts)')
-            for account, widgets in self.payment_parts_widgets.items():
-                _, _, number_input, _ = widgets
-                self.payment_parts['account'][account]['part'] = number_input.value
-            print(self.payment_parts)
-            valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=True)
-            print('valid_payment_parts', valid_payment_parts)
-            if valid_payment_parts != 0:
-                self.main_window.error_dialog(
-                    self.i18n.t('data_error'),
-                    self.i18n.t('invalid_payment_parts'),
-                )
-                return
-            ok = self.db.zakat(self.zakat_plan, parts=self.payment_parts, debug=True)
-
-        if not ok:
-            self.main_window.error_dialog(
-                self.i18n.t('operation_failed'),
-                self.i18n.t('message_status'),
-            )
-            return
-            
-        self.db.save()
-        self.refresh_zakat_page(widget)
-        self.main_window.content = self.main_box
-        self.main_window.info_dialog(
-            self.i18n.t('operation_accomplished_successfully'),
-            self.i18n.t('message_status'),
-        )
-        try:
-            pass    
-        except Exception as e:
-            self.main_window.error_dialog(
-                self.i18n.t('unexpected_error'),
-                str(e),
-            )
-
-    def payment_part_row_widget(self, widget, account, balance, rate):
-        row = toga.Box(style=Pack(direction=ROW, padding=15, text_direction=self.dir))
-        formatted_balance = format_number(balance)
-        def number_input_updated(widget):
-            self.supply = 0
-            for (switch, progress_bar, number_input, rate) in self.payment_parts_widgets.values():
-                if not number_input.value:
-                    continue
-                progress_bar.value = number_input.value
-                self.supply += ZakatTracker.exchange_calc(
-                    x=float(number_input.value) * int(switch.value),
-                    x_rate=float(rate),
-                    y_rate=1,
-                )
-            self.demand_meter.text = f'{self.supply} / {self.demand}'
-            self.apply_payment_parts_button.enabled = self.supply == self.demand
-        number_input = toga.NumberInput(value=0, min=0, max=balance, step=0.01, on_change=number_input_updated, readonly=True, style=Pack(text_direction=self.dir))
-        progress_bar = toga.ProgressBar(value=0, max=balance, style=Pack(flex=1, text_direction=self.dir))
-        def update_progress_bar(widget):
-            number_input.readonly = not widget.value
-            number_input.value = 0
-            if not widget.value:
-                progress_bar.value = 0
-        switch = toga.Switch(f'{account}({formatted_balance})', on_change=update_progress_bar, style=Pack(text_direction=self.dir))
-        self.payment_parts_widgets[account] = (switch, progress_bar, number_input, rate)
-        row.add(switch)
-        row.add(progress_bar)
-        row.add(number_input)
-        return row
-
-    def payment_parts_form(self, widget):
-        print('payment_parts_form')
-        print(self.zakat_plan)
-        brief = self.zakat_plan[1]
-        print('brief', brief)
-        _, _, self.demand = brief
-        print('demand', self.demand)
-        self.demand = round(self.demand, 2)
-        print('demand', self.demand)
-        self.payment_parts_widgets = {}
-        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        form_label = toga.Label(self.i18n.t('payment_parts_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        self.apply_payment_parts_button = toga.Button(self.i18n.t('apply_payment_parts'), on_press=self.pay, enabled=False, style=Pack(flex=1, text_direction=self.dir))
-        self.demand_meter = toga.Label(f'0 / {self.demand}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=24, text_direction=self.dir))
-
-        def auto_pay_switch(widget):
-            for account, widgets in self.payment_parts_widgets.items():
-                print('---------- account ----------', account)
-                switch, progress_bar, number_input, _ = widgets
-                switch.enabled = not widget.value
-                switch.value = False
-                progress_bar.value = 0
-                number_input.value = 0
-                if widget.value:
-                    if account not in self.zakat_plan[2]:
-                        continue
-                    for part in self.zakat_plan[2][account].values():
-                        print('part', part)
-                        progress_bar.value = float(progress_bar.value) + part['total']
-                        number_input.value = float(number_input.value) + part['total']
-            self.apply_payment_parts_button.enabled = widget.value
-            if widget.value:
-                self.supply = self.demand
-                self.demand_meter.text = f'{self.supply} / {self.demand}'
-            else:
-                self.demand_meter.text = f'0 / {self.demand}'
-
-        self.auto_pay_switch = toga.Switch(
-            self.i18n.t('auto_pay_switch'),
-            on_change=auto_pay_switch,
-            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
-        )
-        page.add(form_label)
-        page.add(self.demand_meter)
-        page.add(self.apply_payment_parts_button)
-        page.add(self.auto_pay_switch)
-
-        self.payment_parts = self.db.build_payment_parts(self.demand)
-        print('payment_parts', self.payment_parts)
-
-        # build form
-        parts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir, padding=12))
-        
-        parts_box.add(toga.Divider())
-        for account, part in self.payment_parts['account'].items():
-            print(account, part)
-            parts_box.add(self.payment_part_row_widget(widget, account, part['balance'], part['rate']))
-            parts_box.add(toga.Divider())
-        page.add(toga.ScrollContainer(content=parts_box, style=Pack(flex=1, text_direction=self.dir)))
-        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
-        page.add(back_button)
-        self.main_window.content = page
 
     def zakat_page(self):
         print('zakat_page')
@@ -354,6 +218,59 @@ class ZakatLedger(toga.App):
         page.add(self.zakat_table)
 
         page.add(self.refresh_button)
+        return page
+
+    def recover(self, widget):
+        print('recover')
+        try:
+            if self.db.recall(dry=False, debug=True):
+                self.update_history(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('recover_success'),
+                )
+                return
+            self.main_window.error_dialog(
+                self.i18n.t('message_status'),
+                self.i18n.t('recover_failed'),
+            )
+        except Exception as e:
+            print(f'Error in recover: {e}')
+            self.main_window.error_dialog(
+                self.i18n.t('unexpected_error'),
+                str(e),
+            )
+
+    def history_page(self):
+        print('history_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        restore_button = toga.Button(
+            self.i18n.t('history_button'),
+            on_press=self.recover,
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+        self.history_table = toga.Table(
+            headings=[
+                self.i18n.t('ref'),
+                self.i18n.t('date'),
+                self.i18n.t('logs'),
+            ],
+            missing_value="-",
+            data=self.history_table_items(),
+            on_select=self.history_table_on_select,
+            on_activate=lambda e, row: self.main_window.info_dialog(
+                self.i18n.t('row_details'),
+                self.row_details_str(self.history_table.headings, row),
+            ),
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
+        )
+        page.add(restore_button)
+        page.add(toga.Divider())
+        page.add(self.label_note_widget(self.i18n.t('history_note_1')))
+        page.add(self.label_note_widget(self.i18n.t('history_note_2')))
+        page.add(self.label_note_widget(self.i18n.t('history_note_3')))
+        page.add(toga.Divider())
+        page.add(self.history_table)
         return page
 
     def settings_page(self):
@@ -518,6 +435,40 @@ class ZakatLedger(toga.App):
         page.add(self.accounts_table)
         return page
 
+    def history_details_page(self, widget, ref):
+        print('history_details_page', ref)
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        page_label = toga.Label(
+            self.i18n.t('history_details_page_label').format(ref),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
+        self.history_details_table = toga.Table(
+            headings=[
+                self.i18n.t('action'),
+                self.i18n.t('account'),
+                self.i18n.t('ref'),
+                self.i18n.t('file'),
+                self.i18n.t('key'),
+                self.i18n.t('value'),
+                self.i18n.t('math'),
+            ],
+            missing_value="-",
+            data=self.history_details_table_items(ref),
+            on_activate=lambda e, row: self.main_window.info_dialog(
+                self.i18n.t('row_details'),
+                self.row_details_str(self.history_details_table.headings, row),
+            ),
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
+        )
+        page.add(page_label)
+        page.add(toga.Divider())
+        page.add(self.label_note_widget(self.i18n.t('history_details_page_title').format(ZakatTracker.time_to_datetime(ref))))
+        page.add(toga.Divider())
+        page.add(self.history_details_table)
+        page.add(back_button)
+        self.main_window.content = page
+
     def account_tabs_page(self, widget, account):
         self.title(account)
         tabs = toga.OptionContainer(
@@ -599,7 +550,9 @@ class ZakatLedger(toga.App):
         )
 
         page.add(self.account_tab_page_label_widget(account))
+        page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
+        page.add(toga.Divider())
         page.add(self.boxes_table)
         return page
 
@@ -624,7 +577,9 @@ class ZakatLedger(toga.App):
         )
 
         page.add(self.account_tab_page_label_widget(account))
+        page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
+        page.add(toga.Divider())
         page.add(self.logs_table)
         return page
 
@@ -656,12 +611,32 @@ class ZakatLedger(toga.App):
 
         page.add(self.account_tab_page_label_widget(account))
         page.add(add_button)
+        page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('exchanges_note')))
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
+        page.add(toga.Divider())
         page.add(self.exchanges_table)
         return page
 
     # generators
+
+    def history_details_table_items(self, ref: int):
+        return [(
+            v['action'],
+            v['account'],
+            v['ref'],
+            v['file'],
+            v['key'],
+            v['value'],
+            v['math'],
+        ) for v in self.db.steps()[ref]]
+    
+    def history_table_items(self):
+        return [(
+            k,
+            ZakatTracker.time_to_datetime(k),
+            format_number(len(v)),
+        ) for k, v in sorted(self.db.steps().items(), reverse=True)]
 
     def accounts_table_items(self):
         return [(
@@ -735,10 +710,23 @@ class ZakatLedger(toga.App):
 
     # handlers
 
+    def history_table_on_select(self, widget):
+        print('history_table_on_select', widget.selection)
+        access_key = self.i18n.t('ref')
+        print('history_table_on_select', f'access_key({access_key})')
+        if not hasattr(widget.selection, access_key):
+            return
+        ref = getattr(widget.selection, access_key)
+        print('history_table_on_select', ref)
+        self.update_history(widget)
+        self.history_details_page(widget, ref)
+
     def account_table_on_select(self, widget):
         print('account_table_on_select', widget.selection)
         access_key = self.i18n.t('table_account_access_key')
         print('account_table_on_activate', f'access_key({access_key})')
+        if not hasattr(widget.selection, access_key):
+            return
         account = getattr(widget.selection, access_key)
         print('account_table_on_activate', account)
         self.update_accounts(widget)
@@ -775,6 +763,70 @@ class ZakatLedger(toga.App):
         self.account_select.value = ''
 
     # forms
+
+    def payment_parts_form(self, widget):
+        print('payment_parts_form')
+        print(self.zakat_plan)
+        brief = self.zakat_plan[1]
+        print('brief', brief)
+        _, _, self.demand = brief
+        print('demand', self.demand)
+        self.demand = round(self.demand, 2)
+        print('demand', self.demand)
+        self.payment_parts_widgets = {}
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        form_label = toga.Label(self.i18n.t('payment_parts_form_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.apply_payment_parts_button = toga.Button(self.i18n.t('apply_payment_parts'), on_press=self.pay, enabled=False, style=Pack(flex=1, text_direction=self.dir))
+        self.demand_meter = toga.Label(f'0 / {self.demand}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=24, text_direction=self.dir))
+
+        def auto_pay_switch(widget):
+            for account, widgets in self.payment_parts_widgets.items():
+                print('---------- account ----------', account)
+                switch, progress_bar, number_input, _ = widgets
+                switch.enabled = not widget.value
+                switch.value = False
+                progress_bar.value = 0
+                number_input.value = 0
+                if widget.value:
+                    if account not in self.zakat_plan[2]:
+                        continue
+                    for part in self.zakat_plan[2][account].values():
+                        print('part', part)
+                        progress_bar.value = float(progress_bar.value) + part['total']
+                        number_input.value = float(number_input.value) + part['total']
+            self.apply_payment_parts_button.enabled = widget.value
+            if widget.value:
+                self.supply = self.demand
+                self.demand_meter.text = f'{self.supply} / {self.demand}'
+            else:
+                self.demand_meter.text = f'0 / {self.demand}'
+
+        self.auto_pay_switch = toga.Switch(
+            self.i18n.t('auto_pay_switch'),
+            on_change=auto_pay_switch,
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        page.add(form_label)
+        page.add(self.demand_meter)
+        page.add(self.apply_payment_parts_button)
+        page.add(self.auto_pay_switch)
+
+        self.payment_parts = self.db.build_payment_parts(self.demand)
+        print('payment_parts', self.payment_parts)
+
+        # build form
+        parts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir, padding=12))
+        
+        parts_box.add(toga.Divider())
+        for account, part in self.payment_parts['account'].items():
+            print(account, part)
+            parts_box.add(self.payment_part_row_widget(widget, account, part['balance'], part['rate']))
+            parts_box.add(toga.Divider())
+        page.add(toga.ScrollContainer(content=parts_box, style=Pack(flex=1, text_direction=self.dir)))
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
+        page.add(back_button)
+        self.main_window.content = page
+
 
     def exchange_form(self, widget, account):
         print('exchange_form', account)
@@ -949,11 +1001,58 @@ class ZakatLedger(toga.App):
         self.title()
         self.main_window.content = self.main_box
 
+    def update_history(self, widget):
+        self.history_table.data = self.history_table_items()
+
     def update_accounts(self, widget):
         self.accounts_table.data = self.accounts_table_items()
     
     def update_exchanges(self, widget, account):
         self.exchanges_table.data = self.exchanges_table_items(account)
+
+    def pay(self, widget):
+        print('pay')
+        ok = False
+        if self.auto_pay_switch.value:
+            print('apply(auto)')
+            ok = self.db.zakat(self.zakat_plan, debug=True)
+        else:
+            print('apply(parts)')
+            for account, widgets in self.payment_parts_widgets.items():
+                _, _, number_input, _ = widgets
+                self.payment_parts['account'][account]['part'] = number_input.value
+            print(self.payment_parts)
+            valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=True)
+            print('valid_payment_parts', valid_payment_parts)
+            if valid_payment_parts != 0:
+                self.main_window.error_dialog(
+                    self.i18n.t('data_error'),
+                    self.i18n.t('invalid_payment_parts'),
+                )
+                return
+            ok = self.db.zakat(self.zakat_plan, parts=self.payment_parts, debug=True)
+
+        if not ok:
+            self.main_window.error_dialog(
+                self.i18n.t('message_status'),
+                self.i18n.t('operation_failed'),
+            )
+            return
+            
+        self.db.save()
+        self.refresh_zakat_page(widget)
+        self.main_window.content = self.main_box
+        self.main_window.info_dialog(
+            self.i18n.t('message_status'),
+            self.i18n.t('operation_accomplished_successfully'),
+        )
+        try:
+            pass    
+        except Exception as e:
+            self.main_window.error_dialog(
+                self.i18n.t('unexpected_error'),
+                str(e),
+            )
 
     def exchange(self, widget, account):
         print('exchange', account)
@@ -981,8 +1080,8 @@ class ZakatLedger(toga.App):
             self.db.save()
             self.main_window.content = self.account_tabs
             self.main_window.info_dialog(
-                self.i18n.t('operation_accomplished_successfully'),
                 self.i18n.t('message_status'),
+                self.i18n.t('operation_accomplished_successfully'),
             )
         except Exception as e:
             self.main_window.error_dialog(
@@ -1022,8 +1121,8 @@ class ZakatLedger(toga.App):
             self.update_accounts(widget)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
-                self.i18n.t('operation_accomplished_successfully'),
                 self.i18n.t('message_status'),
+                self.i18n.t('operation_accomplished_successfully'),
             )
         except Exception as e:
             self.main_window.error_dialog(
@@ -1063,8 +1162,8 @@ class ZakatLedger(toga.App):
             self.update_accounts(widget)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
-                self.i18n.t('operation_accomplished_successfully'),
                 self.i18n.t('message_status'),
+                self.i18n.t('operation_accomplished_successfully'),
             )
         except Exception as e:
             self.main_window.error_dialog(
@@ -1096,6 +1195,36 @@ class ZakatLedger(toga.App):
         return datetime(year, month, day, hour, minute, second), missing
 
     # widgets
+
+    def payment_part_row_widget(self, widget, account, balance, rate):
+        row = toga.Box(style=Pack(direction=ROW, padding=15, text_direction=self.dir))
+        formatted_balance = format_number(balance)
+        def number_input_updated(widget):
+            self.supply = 0
+            for (switch, progress_bar, number_input, rate) in self.payment_parts_widgets.values():
+                if not number_input.value:
+                    continue
+                progress_bar.value = number_input.value
+                self.supply += ZakatTracker.exchange_calc(
+                    x=float(number_input.value) * int(switch.value),
+                    x_rate=float(rate),
+                    y_rate=1,
+                )
+            self.demand_meter.text = f'{self.supply} / {self.demand}'
+            self.apply_payment_parts_button.enabled = self.supply == self.demand
+        number_input = toga.NumberInput(value=0, min=0, max=balance, step=0.01, on_change=number_input_updated, readonly=True, style=Pack(text_direction=self.dir))
+        progress_bar = toga.ProgressBar(value=0, max=balance, style=Pack(flex=1, text_direction=self.dir))
+        def update_progress_bar(widget):
+            number_input.readonly = not widget.value
+            number_input.value = 0
+            if not widget.value:
+                progress_bar.value = 0
+        switch = toga.Switch(f'{account}({formatted_balance})', on_change=update_progress_bar, style=Pack(text_direction=self.dir))
+        self.payment_parts_widgets[account] = (switch, progress_bar, number_input, rate)
+        row.add(switch)
+        row.add(progress_bar)
+        row.add(number_input)
+        return row
 
     def label_note_widget(self, note: str):
         return toga.Label(f'* {note} *', style=Pack(flex=1, text_align=self.text_align, text_direction=self.dir, font_size=9))
