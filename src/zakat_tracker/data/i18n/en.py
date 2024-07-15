@@ -53,9 +53,13 @@ translations = {
     'exchange_time': 'Exchange Time',
     'exchange_desc': 'Exchange Description',
 
+    # file_server_page
+    'open_in_web_browser': 'Open in Web Browser',
+
     # data_management_page
     'show_data': 'Show Data',
     'show_raw_data': 'Show Raw Data',
+    'file_server': 'Run File Server',
     
     # settings_page
     'language': 'Language',

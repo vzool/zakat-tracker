@@ -13,6 +13,7 @@ from datetime import datetime
 from .i18n import i18n, Lang
 from .config import Config
 from .neknaj_jsonviewer import json_viewer
+from .file_server import start_file_server
 import pathlib
 import json
 
@@ -292,6 +293,49 @@ class ZakatLedger(toga.App):
         page.add(toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir)))
         return page
 
+    async def file_server_page(self, widget):
+        print('file_server_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        web_view = toga.WebView(style=Pack(flex=1, text_direction=self.dir))
+        
+        def database_callback(file_path):
+            ZakatTracker(db_path=file_path)
+
+        def csv_callback(file_path, database_path, debug):
+            x = ZakatTracker(db_path=database_path)
+            return x.import_csv(file_path, debug=debug)
+
+        file_name, download_url, upload_url, server_thread, shutdown_server = start_file_server(
+            self.db_path,
+            database_callback=database_callback,
+            csv_callback=csv_callback,
+            debug=True,
+        )
+        def back_button_action(widget):
+            shutdown_server()
+            self.goto_main_data_management_page(widget)
+        back_button = toga.Button(self.i18n.t('back'), on_press=back_button_action, style=Pack(flex=1, text_direction=self.dir))
+        await web_view.load_url(upload_url)
+        def open_link_button_action(widget):
+            try:
+                print('open_link_button_action')
+                from android.content import Intent
+                from android.net import Uri
+                intent = Intent(Intent.ACTION_VIEW)
+                intent.setData(Uri.parse(upload_url))
+                self._impl.start_activity(intent)
+            except Exception as e:
+                self.main_window.error_dialog(
+                    self.i18n.t('unexpected_error'),
+                    str(e),
+                )
+        open_link_button = toga.Button(self.i18n.t('open_in_web_browser'), on_press=open_link_button_action, style=Pack(flex=1, text_direction=self.dir))
+        page.add(open_link_button)
+        server_thread.start()
+        page.add(web_view)
+        page.add(back_button)
+        self.main_window.content = page
+
     def show_data_page(self, widget):
         print('show_data_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -309,20 +353,19 @@ class ZakatLedger(toga.App):
         page.add(back_button)
         self.main_window.content = page
 
-    def goto_main_data_management_page(self, widget):
-        print('cancel')
-        self.main_window.content = self.main_data_management_page
-
     def data_management_page(self, widget):
         print('data_management_page')
         self.title(self.i18n.t('data_management'))
         self.main_data_management_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         show_data_button = toga.Button(self.i18n.t('show_data'), on_press=self.show_data_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        file_server_button = toga.Button(self.i18n.t('file_server'), on_press=self.file_server_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         self.show_raw_data_switch = toga.Switch(self.i18n.t('show_raw_data'))
         self.main_data_management_page.add(self.show_raw_data_switch)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(show_data_button)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(file_server_button)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(back_button)
         self.main_window.content = self.main_data_management_page
@@ -1054,6 +1097,9 @@ class ZakatLedger(toga.App):
         self.main_window.content = toga.ScrollContainer(content=form, style=Pack(text_direction=self.dir))
 
     # actions
+
+    def goto_main_data_management_page(self, widget):
+        self.main_window.content = self.main_data_management_page
 
     def goto_main_page(self, widget):
         print('cancel')

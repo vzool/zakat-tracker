@@ -53,9 +53,13 @@ translations = {
     'exchange_time': 'وقت معدل الصرف',
     'exchange_desc': 'وصف معدل الصرف',
 
+    # file_server_page
+    'open_in_web_browser': 'فتح في متصفح الويب',
+
     # data_management_page
     'show_data': 'عرض البيانات',
     'show_raw_data': 'عرض البيانات بشكل خام',
+    'file_server': 'تشغيل خادم الملفات',
     
     # settings_page
     'language': 'اللغة',
