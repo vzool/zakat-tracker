@@ -52,12 +52,16 @@ translations = {
     'exchange_rate': 'معدل الصرف',
     'exchange_time': 'وقت معدل الصرف',
     'exchange_desc': 'وصف معدل الصرف',
+
+    # data_management_page
+    'show_data': 'عرض البيانات',
     
     # settings_page
     'language': 'اللغة (Language)',
     'lang_note': 'بعد تغيير اللغة يرجى إغلاق التطبيق وفتحه مرة أخرى',
     'load_from_cache_when_possible': 'التحميل من ذاكرة التخزين المؤقتة إذا كانت متوفرة',
     'show_hidden_accounts': 'عرض الحسابات المخفية في صفحة الحسابات',
+    'data_management': 'إدارة البيانات',
     'silver_gram_price_in_local_currency': 'سعر جرام الفضة بالعملة المحلية',
     'silver_nisab_gram_quantity': 'عدد الجرامات اللازمة لبلوغ النصاب',
     'haul_time_cycle_in_days': 'عدد الأيام في السنة',

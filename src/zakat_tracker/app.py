@@ -8,11 +8,12 @@ import toga
 import toga.sources
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
-from zakat import ZakatTracker
+from zakat import ZakatTracker, JSONEncoder
 from datetime import datetime
 from .i18n import i18n, Lang
 from .config import Config
 import pathlib
+import json
 
 def format_number(x) -> str:
     y = str(x).rstrip('0').rstrip('.')
@@ -290,6 +291,36 @@ class ZakatLedger(toga.App):
         page.add(toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir)))
         return page
 
+    def show_data_page(self, widget):
+        print('show_data_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        web_view = toga.WebView(style=Pack(flex=1, text_direction=self.dir))
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_data_management_page, style=Pack(flex=1, text_direction=self.dir))
+
+        data = json.dumps(self.db.box(), indent=4, cls=JSONEncoder)
+        web_view.set_content('http://localhost', f"<pre>{data}</pre>")
+
+        page.add(web_view)
+        page.add(back_button)
+        self.main_window.content = page
+
+    def goto_main_data_management_page(self, widget):
+        print('cancel')
+        self.main_window.content = self.main_data_management_page
+
+    def data_management_page(self, widget):
+        print('data_management_page')
+        self.main_data_management_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
+        page_label = toga.Label(self.i18n.t('data_management'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        show_data_button = toga.Button(self.i18n.t('show_data'), on_press=self.show_data_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.main_data_management_page.add(page_label)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(show_data_button)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(back_button)
+        self.main_window.content = self.main_data_management_page
+        
     def settings_page(self):
         print('settings_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -327,6 +358,8 @@ class ZakatLedger(toga.App):
             on_change=lambda e: show_hidden_accounts(e.value),
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
+
+        data_management_button = toga.Button(self.i18n.t('data_management'), on_press=self.data_management_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         # silver_gram_price
         silver_gram_price_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
@@ -394,6 +427,8 @@ class ZakatLedger(toga.App):
         page.add(load_from_cache_when_possible_switch)
         page.add(toga.Divider())
         page.add(show_hidden_accounts_switch)
+        page.add(toga.Divider())
+        page.add(data_management_button)
         page.add(toga.Divider())
         page.add(silver_gram_price_box)
         page.add(toga.Divider())
