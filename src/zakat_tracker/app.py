@@ -23,9 +23,11 @@ def format_number(x) -> str:
         return '0'
     return format(float(y), ',').rstrip('0').rstrip('.')
 
+start_time = ZakatTracker.time()
+
 class ZakatLedger(toga.App):
     def startup(self):
-
+        
         self.debug = False
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
@@ -50,6 +52,25 @@ class ZakatLedger(toga.App):
         self._original_title = self.main_window.title
         self.main_tabs_page()
         self.main_window.show()
+        self.finish_time = ZakatTracker.time()
+        self.load_time = self.time(self.finish_time - start_time)
+        print(self.load_time)
+
+    def time(self, diff: int):
+        return ZakatTracker.duration_from_nanoseconds(
+            diff,
+            spoken_time_separator = self.i18n.t('spoken_time_separator'),
+            millennia = self.i18n.t('millennia'),
+            century = self.i18n.t('century'),
+            years = self.i18n.t('years'),
+            days = self.i18n.t('days'),
+            hours = self.i18n.t('hours'),
+            minutes = self.i18n.t('minutes'),
+            seconds = self.i18n.t('seconds'),
+            milli_seconds = self.i18n.t('milliSeconds'),
+            micro_seconds = self.i18n.t('microSeconds'),
+            nano_seconds = self.i18n.t('nanoSeconds'),
+        )
 
     def title(self, text: str = None):
         if text:
@@ -107,9 +128,13 @@ class ZakatLedger(toga.App):
 
     def refresh(self, widget):
         print('refresh')
+        start = ZakatTracker.time()
         self.update_accounts(widget)
         self.refresh_zakat_page()
         self.update_history(widget)
+        finish = ZakatTracker.time()
+        self.refresh_time = self.time(finish - start)
+        print(self.refresh_time)
 
     def zakat_page(self):
         print('zakat_page')
@@ -381,6 +406,21 @@ class ZakatLedger(toga.App):
         database_file_size_box.add(database_file_size_label)
         database_file_size_box.add(database_file_size_value)
 
+        # load_time
+        load_time_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        load_time_label = toga.Label(self.i18n.t('load_time'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        load_time_value = toga.Label(self.load_time[1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        load_time_box.add(load_time_label)
+        load_time_box.add(load_time_value)
+
+        # refresh_time
+        if hasattr(self, 'refresh_time'):
+            refresh_time_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+            refresh_time_label = toga.Label(self.i18n.t('refresh_time'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            refresh_time_value = toga.Label(self.refresh_time[1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+            refresh_time_box.add(refresh_time_label)
+            refresh_time_box.add(refresh_time_value)
+
         self.main_data_management_page.add(self.show_raw_data_switch)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(show_data_button)
@@ -391,6 +431,11 @@ class ZakatLedger(toga.App):
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(database_file_size_box)
         self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(load_time_box)
+        self.main_data_management_page.add(toga.Divider())
+        if hasattr(self, 'refresh_time'):
+            self.main_data_management_page.add(refresh_time_box)
+            self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(back_button)
         self.main_window.content = self.main_data_management_page
         

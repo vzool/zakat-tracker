@@ -4,6 +4,19 @@ translations = {
     'text_align': 'right',
     'formal_name': 'متتبع الزكاة',
 
+    # time
+    'spoken_time_separator': ' و',
+    'millennia': 'آلفية',
+    'century': 'قرن',
+    'years': 'سنة',
+    'days': 'يوم',
+    'hours': 'ساعة',
+    'minutes': 'دقيقة',
+    'seconds': 'ثانية',
+    'milliSeconds': 'ميلي ثانية',
+    'microSeconds': 'مايكرو ثانية',
+    'nanoSeconds': 'نانو ثانية',
+
     # main_tabs_page
     'accounts': 'الحسابات',
     'zakat': 'الزكاة',
@@ -62,6 +75,8 @@ translations = {
     'file_server': 'تشغيل خادم الملفات',
     'ram_size': 'حجم ذاكرة التخزين المؤقتة',
     'database_file_size': 'حجم ملف قاعدة البيانات',
+    'load_time': 'الوقت المستغرق للتحميل المبدئي',
+    'refresh_time': 'الوقت المستغرق  لآخر تحديث للبيانات',
     
     # settings_page
     'language': 'اللغة',

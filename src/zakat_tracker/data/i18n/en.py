@@ -4,6 +4,19 @@ translations = {
     'text_align': 'left',
     'formal_name': 'Zakat Tracker',
 
+    # time
+    'spoken_time_separator': ',',
+    'millennia': 'Millennia',
+    'century': 'Century',
+    'years': 'Years',
+    'days': 'Days',
+    'hours': 'Hours',
+    'minutes': 'Minutes',
+    'seconds': 'Seconds',
+    'milliSeconds': 'MilliSeconds',
+    'microSeconds': 'MicroSeconds',
+    'nanoSeconds': 'NanoSeconds',
+
     # main_tabs_page
     'accounts': 'Accounts',
     'zakat': 'Zakat',
@@ -62,6 +75,8 @@ translations = {
     'file_server': 'Run File Server',
     'ram_size': 'RAM Size',
     'database_file_size': 'Database File Size',
+    'load_time': 'Time taken for initial startup',
+    'refresh_time': 'The time it took for the data to be last updated',
     
     # settings_page
     'language': 'Language',
