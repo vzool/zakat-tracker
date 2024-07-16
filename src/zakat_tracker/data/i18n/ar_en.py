@@ -60,6 +60,8 @@ translations = {
     'show_data': 'عرض البيانات',
     'show_raw_data': 'عرض البيانات بشكل خام',
     'file_server': 'تشغيل خادم الملفات',
+    'ram_size': 'حجم ذاكرة التخزين المؤقتة',
+    'database_file_size': 'حجم ملف قاعدة البيانات',
     
     # settings_page
     'language': 'اللغة (Language)',

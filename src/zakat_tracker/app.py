@@ -345,7 +345,7 @@ class ZakatLedger(toga.App):
         web_view = toga.WebView(style=Pack(flex=1, text_direction=self.dir))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_data_management_page, style=Pack(flex=1, text_direction=self.dir))
 
-        data = json.dumps(self.db.box(), indent=4 if self.show_raw_data_switch.value else None, cls=JSONEncoder)
+        data = json.dumps(self.db.vault(), indent=4 if self.show_raw_data_switch.value else None, cls=JSONEncoder)
 
         if self.show_raw_data_switch.value:
             web_view.set_content('http://localhost', f"<pre>{data}</pre>")
@@ -364,11 +364,32 @@ class ZakatLedger(toga.App):
         show_data_button = toga.Button(self.i18n.t('show_data'), on_press=self.show_data_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         file_server_button = toga.Button(self.i18n.t('file_server'), on_press=self.file_server_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         self.show_raw_data_switch = toga.Switch(self.i18n.t('show_raw_data'))
+
+        stats = self.db.stats()
+
+        # ram_size
+        ram_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        ram_size_label = toga.Label(self.i18n.t('ram_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        ram_size_value = toga.Label(stats['ram'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        ram_size_box.add(ram_size_label)
+        ram_size_box.add(ram_size_value)
+        
+        # database_file_size
+        database_file_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        database_file_size_label = toga.Label(self.i18n.t('database_file_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        database_file_size_value = toga.Label(stats['database'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        database_file_size_box.add(database_file_size_label)
+        database_file_size_box.add(database_file_size_value)
+
         self.main_data_management_page.add(self.show_raw_data_switch)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(show_data_button)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(file_server_button)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(ram_size_box)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(database_file_size_box)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(back_button)
         self.main_window.content = self.main_data_management_page

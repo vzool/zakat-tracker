@@ -60,6 +60,8 @@ translations = {
     'show_data': 'Show Data',
     'show_raw_data': 'Show Raw Data',
     'file_server': 'Run File Server',
+    'ram_size': 'RAM Size',
+    'database_file_size': 'Database File Size',
     
     # settings_page
     'language': 'Language',
