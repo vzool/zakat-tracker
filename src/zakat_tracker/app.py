@@ -264,6 +264,7 @@ class ZakatLedger(toga.App):
                 return
             print('confirmed')
             try:
+                self.db.free(self.db.lock())
                 if self.db.recall(dry=False, debug=self.debug):
                     self.refresh(widget)
                     self.main_window.info_dialog(
