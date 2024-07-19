@@ -72,6 +72,11 @@ translations = {
     # data_management_page
     'show_data': 'Show Data',
     'show_raw_data': 'Show Raw Data',
+    'open_database_file': 'Open Database File',
+    'import_csv_file': 'Import CSV File',
+    'import_database_file': 'ّImport Database File',
+    'save_database_file': 'Save Database File',
+    'export_database_file': 'Export Database File',
     'file_server': 'Run File Server',
     'ram_size': 'RAM Size',
     'database_file_size': 'Database File Size',

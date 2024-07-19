@@ -72,6 +72,11 @@ translations = {
     # data_management_page
     'show_data': 'عرض البيانات',
     'show_raw_data': 'عرض البيانات بشكل خام',
+    'open_database_file': 'فتح ملف قاعدة البيانات',
+    'import_csv_file': 'استيراد ملف CSV',
+    'import_database_file': 'استيراد ملف قاعدة البيانات',
+    'save_database_file': 'حفظ ملف قاعدة البيانات',
+    'export_database_file': 'تصدير ملف قاعدة البيانات',
     'file_server': 'تشغيل خادم الملفات',
     'ram_size': 'حجم ذاكرة التخزين المؤقتة',
     'database_file_size': 'حجم ملف قاعدة البيانات',

@@ -81,8 +81,6 @@ class ZakatLedger(toga.App):
     # loaders
 
     def load_db(self):
-        if not os.path.exists(self.paths.data):
-            pathlib.Path.mkdir(self.paths.data)
         self.db_path = os.path.join(self.paths.data, 'zakat.pickle')
         print(f'db: {self.db_path}')
         self.db = ZakatTracker(self.db_path)
@@ -263,25 +261,19 @@ class ZakatLedger(toga.App):
                 print('cancelled')
                 return
             print('confirmed')
-            try:
-                self.db.free(self.db.lock())
-                if self.db.recall(dry=False, debug=self.debug):
-                    self.refresh(widget)
-                    self.main_window.info_dialog(
-                        self.i18n.t('message_status'),
-                        self.i18n.t('recover_success'),
-                    )
-                    return
-                self.main_window.error_dialog(
+            self.db.free(self.db.lock())
+            if self.db.recall(dry=False, debug=self.debug):
+                self.db.save()
+                self.refresh(widget)
+                self.main_window.info_dialog(
                     self.i18n.t('message_status'),
-                    self.i18n.t('recover_failed'),
+                    self.i18n.t('recover_success'),
                 )
-            except Exception as e:
-                print(f'Error in recover: {e}')
-                self.main_window.error_dialog(
-                    self.i18n.t('unexpected_error'),
-                    str(e),
-                )
+                return
+            self.main_window.error_dialog(
+                self.i18n.t('message_status'),
+                self.i18n.t('recover_failed'),
+            )
         self.main_window.confirm_dialog(
             self.i18n.t('recover_confirm_title'),
             self.i18n.t('recover_confirm_message'),
@@ -291,7 +283,7 @@ class ZakatLedger(toga.App):
     def history_page(self):
         print('history_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        restore_button = toga.Button(
+        self.restore_button = toga.Button(
             self.i18n.t('history_button'),
             on_press=self.recover,
             style=Pack(flex=1, text_direction=self.dir),
@@ -311,7 +303,8 @@ class ZakatLedger(toga.App):
             ),
             style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
         )
-        page.add(restore_button)
+        self.restore_button.enabled = len(self.history_table.data) > 0
+        page.add(self.restore_button)
         page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('history_note_1')))
         page.add(self.label_note_widget(self.i18n.t('history_note_2')))
@@ -386,9 +379,89 @@ class ZakatLedger(toga.App):
         print('data_management_page')
         self.title(self.i18n.t('data_management'))
         self.main_data_management_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         show_data_button = toga.Button(self.i18n.t('show_data'), on_press=self.show_data_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         file_server_button = toga.Button(self.i18n.t('file_server'), on_press=self.file_server_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
+        async def import_csv_file(widget):
+            print('import_csv_file')
+            file_path = await self.main_window.open_file_dialog(
+                self.i18n.t('import_csv_file'),
+                file_types=['csv'],
+                multiple_select=False,
+            )
+            print('open_file_dialog', file_path)
+            if not file_path:
+                return
+            try:
+                self.db.snapshot()
+                result = self.db.import_csv(file_path)
+                print('result', result)
+                self.db.save()
+                self.refresh(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('operation_accomplished_successfully'),
+                )
+            except Exception as e:
+                self.main_window.error_dialog(
+                    self.i18n.t('unexpected_error'),
+                    str(e),
+                )
+        import_csv_file_button = toga.Button(self.i18n.t('import_csv_file'), on_press=import_csv_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
+        async def import_database_file(widget):
+            print('import_database_file')
+            file_path = await self.main_window.open_file_dialog(
+                self.i18n.t('open_database_file'),
+                file_types=['pickle'],
+                multiple_select=False,
+            )
+            print('open_file_dialog', file_path)
+            if not file_path:
+                return
+            try:
+                ZakatTracker(file_path)
+                self.db.snapshot()
+                self.db.load(file_path)
+                self.db.save()
+                self.refresh(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('operation_accomplished_successfully'),
+                )
+            except Exception as e:
+                self.main_window.error_dialog(
+                    self.i18n.t('unexpected_error'),
+                    str(e),
+                )
+        import_database_file_button = toga.Button(self.i18n.t('import_database_file'), on_press=import_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
+        async def export_database_file(widget):
+            print('export_database_file')
+            file_path = await self.main_window.save_file_dialog(
+                self.i18n.t('save_database_file'),
+                suggested_filename='zakat.pickle',
+                file_types=['pickle'],
+            )
+            if not file_path:
+                return
+            file_path = str(file_path)
+            file_path += '.pickle' if not file_path.endswith('.pickle') else ''
+            print('save_file_dialog', file_path)
+            try:
+                if self.db.save(file_path):
+                    self.main_window.info_dialog(
+                        self.i18n.t('message_status'),
+                        self.i18n.t('operation_accomplished_successfully'),
+                    )
+                    return
+            except Exception as e:
+                self.main_window.error_dialog(
+                    self.i18n.t('unexpected_error'),
+                    str(e),
+                ) 
+        export_database_file_button = toga.Button(self.i18n.t('export_database_file'), on_press=export_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         self.show_raw_data_switch = toga.Switch(self.i18n.t('show_raw_data'))
 
         stats = self.db.stats()
@@ -426,6 +499,12 @@ class ZakatLedger(toga.App):
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(show_data_button)
         self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(import_csv_file_button)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(import_database_file_button)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(export_database_file_button)
+        self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(file_server_button)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(ram_size_box)
@@ -439,7 +518,7 @@ class ZakatLedger(toga.App):
             self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(back_button)
         self.main_window.content = self.main_data_management_page
-        
+
     def settings_page(self):
         print('settings_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -1183,6 +1262,7 @@ class ZakatLedger(toga.App):
 
     def update_history(self, widget):
         self.history_table.data = self.history_table_items()
+        self.restore_button.enabled = len(self.history_table.data) > 0
 
     def update_accounts(self, widget):
         self.accounts_table.data = self.accounts_table_items()
