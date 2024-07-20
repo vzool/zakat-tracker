@@ -471,6 +471,26 @@ class ZakatLedger(toga.App):
 
         async def export_database_file(widget):
             print('export_database_file')
+            if self.android:
+                from android.content import Intent
+                from android.net import Uri
+                from java.io import File
+                self.db.save()
+                file = File(str(self.db.path()))
+                print('file.length:', file.length())
+                intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                intent.setType("*/*")
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
+                intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+                self._impl.start_activity(Intent.createChooser(intent, self.i18n.t('export_database_file')))
+                return
+                with open(self.db.path(), "rb") as file:
+                    content = file.read()
+                    intent = Intent(Intent.ACTION_SEND)
+                    intent.setData(content)
+                    self._impl.start_activity(intent)
+                return
             file_path = await self.main_window.save_file_dialog(
                 self.i18n.t('save_database_file'),
                 suggested_filename='zakat.pickle',
