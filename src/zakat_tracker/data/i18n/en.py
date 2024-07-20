@@ -99,6 +99,7 @@ translations = {
     'add': 'Add',
     'accounts_table_note': 'One-click to view details of boxes or logs in the account',
     'table_pagination_label': 'Number of records {} each page has {} element - Page {} of {}',
+    'sn': 'no.',
     'transfer': 'Transfer',
     'account': 'Account',
     'balance': 'Balance',

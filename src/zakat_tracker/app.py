@@ -297,6 +297,7 @@ class ZakatLedger(toga.App):
         self.history_table_items_per_page = 13
         self.history_table = toga.Table(
             headings=[
+                self.i18n.t('sn'),
                 self.i18n.t('ref'),
                 self.i18n.t('date'),
                 self.i18n.t('logs'),
@@ -773,7 +774,12 @@ class ZakatLedger(toga.App):
 
         start_index = (page_number - 1) * page_size
         end_index = start_index + page_size
-        return items[start_index:end_index], total_pages, total_items
+        page_items = []
+        for i, item in enumerate(items[start_index:end_index]):
+            item_number = start_index + i + 1  # Calculate item number
+            page_items.append((item_number,) + item)  # Include item number with item
+
+        return page_items, total_pages, total_items
 
     def accounts_page(self):
         print('accounts_page')
@@ -796,6 +802,7 @@ class ZakatLedger(toga.App):
         self.accounts_table_items_per_page = 13
         self.accounts_table = toga.Table(
             headings=[
+                self.i18n.t('sn'),
                 self.i18n.t('account'),
                 self.i18n.t('balance'),
                 self.i18n.t('box'),
