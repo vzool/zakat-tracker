@@ -318,6 +318,7 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('history_note_3')))
         page.add(toga.Divider())
         page.add(self.history_table_pagination_label)
+        page.add(toga.Divider())
         page.add(self.history_table)
         buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
         def last(widget):
@@ -824,6 +825,7 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
         page.add(self.accounts_table_pagination_label)
+        page.add(toga.Divider())
         page.add(self.accounts_table)
 
         buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
