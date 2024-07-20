@@ -473,23 +473,57 @@ class ZakatLedger(toga.App):
             print('export_database_file')
             if self.android:
                 from android.content import Intent
+                from androidx.core.content import FileProvider
                 from android.net import Uri
                 from java.io import File
-                self.db.save()
-                file = File(str(self.db.path()))
+                # # causes
+                # # W/python.stderr: Error in async handler: file:///data/data/net.vzool.zakat_tracker.zakat_tracker/files/data/zakat.pickle exposed beyond app through ClipData.Item.getUri()
+                # # android.os.FileUriExposedException
+                # file_path = self.db.path()
+                # file = File(str(file_path))
+                # intent = Intent(Intent.ACTION_SEND)
+                # intent.setType("*/*")
+                # intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
+                # intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
+
+                context = self._impl.native
+                shared_folder = File(context.getCacheDir(), "shared")
+                if not shared_folder.exists():
+                    shared_folder.mkdirs()
+                print('shared_folder', shared_folder.getAbsolutePath())
+                file_path = os.path.join(shared_folder.getAbsolutePath(), 'zakat.pickle')
+                self.db.save(file_path)
+                print('file_path', file_path)
+                file = File(str(file_path))
                 print('file.length:', file.length())
-                intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                print('self.app_id:', self.app_id)
+                file_intent = FileProvider.getUriForFile(
+                    context,
+                    f"{self.app_id}.fileprovider",
+                    file,
+                )
+                print('file_intent', file_intent)
+                intent = Intent(Intent.ACTION_SEND)
                 intent.setType("*/*")
-                intent.addCategory(Intent.CATEGORY_OPENABLE)
                 intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
-                intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
-                self._impl.start_activity(Intent.createChooser(intent, self.i18n.t('export_database_file')))
-                return
-                with open(self.db.path(), "rb") as file:
-                    content = file.read()
-                    intent = Intent(Intent.ACTION_SEND)
-                    intent.setData(content)
-                    self._impl.start_activity(intent)
+                intent.putExtra(Intent.EXTRA_STREAM, file_intent)
+                # intent = Intent(Intent.ACTION_SEND)
+                # intent.setType("image/*")
+                # intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
+                # intent.setAction(Intent.ACTION_SEND)
+                # intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
+                # intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                # intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                def on_complete(code, data):
+                    # Activity.RESULT_CANCELED == 0
+                    print('on_complete', code, data)
+                    # if code:
+                    #     photo = toga.Image(Path(photo_file.getAbsolutePath()))
+                    #     result.set_result(photo)
+                    # else:
+                    #     result.set_result(None)
+                self._impl.start_activity(Intent.createChooser(intent, self.i18n.t('export_database_file')), on_complete=on_complete)
+                # self._impl.start_activity(intent, on_complete=on_complete)
                 return
             file_path = await self.main_window.save_file_dialog(
                 self.i18n.t('save_database_file'),
