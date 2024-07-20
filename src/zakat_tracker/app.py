@@ -32,6 +32,7 @@ class ZakatLedger(toga.App):
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
         self.datetime_supported = self.os in ['android', 'windows']
+        self.android = self.os == 'android'
         print(f'platfom: {self.os} - datetime_supported: {self.datetime_supported}')
         print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
@@ -384,15 +385,31 @@ class ZakatLedger(toga.App):
 
         async def import_csv_file(widget):
             print('import_csv_file')
-            file_path = await self.main_window.open_file_dialog(
-                self.i18n.t('import_csv_file'),
-                file_types=['csv'],
-                multiple_select=False,
-            )
+            if self.android:
+                from android.content import Intent
+
+                fileChoose = Intent(Intent.ACTION_GET_CONTENT)
+                fileChoose.addCategory(Intent.CATEGORY_OPENABLE)
+                fileChoose.setType("*/*")
+
+                results = await self._impl.intent_result(Intent.createChooser(fileChoose, self.i18n.t('import_csv_file')))
+                data = results['resultData'].getData()
+                context = self._impl.native
+                bytes_data = bytes((context.getContentResolver().openInputStream(data).readAllBytes()))
+                file_path = os.path.join(self.paths.cache, 'import.csv')
+                with open(file_path, "wb") as file:
+                    file.write(bytes_data)
+            else:
+                file_path = await self.main_window.open_file_dialog(
+                    self.i18n.t('import_csv_file'),
+                    file_types=['csv'],
+                    multiple_select=False,
+                )
             print('open_file_dialog', file_path)
             if not file_path:
                 return
             try:
+                self.db.save()
                 self.db.snapshot()
                 result = self.db.import_csv(file_path)
                 print('result', result)
@@ -411,16 +428,32 @@ class ZakatLedger(toga.App):
 
         async def import_database_file(widget):
             print('import_database_file')
-            file_path = await self.main_window.open_file_dialog(
-                self.i18n.t('open_database_file'),
-                file_types=['pickle'],
-                multiple_select=False,
-            )
+            if self.android:
+                from android.content import Intent
+
+                fileChoose = Intent(Intent.ACTION_GET_CONTENT)
+                fileChoose.addCategory(Intent.CATEGORY_OPENABLE)
+                fileChoose.setType("*/*")
+
+                results = await self._impl.intent_result(Intent.createChooser(fileChoose, self.i18n.t('open_database_file')))
+                data = results['resultData'].getData()
+                context = self._impl.native
+                bytes_data = bytes((context.getContentResolver().openInputStream(data).readAllBytes()))
+                file_path = os.path.join(self.paths.cache, 'import.pickle')
+                with open(file_path, "wb") as file:
+                    file.write(bytes_data)
+            else:
+                file_path = await self.main_window.open_file_dialog(
+                    self.i18n.t('open_database_file'),
+                    file_types=['pickle'],
+                    multiple_select=False,
+                )
             print('open_file_dialog', file_path)
             if not file_path:
                 return
             try:
                 ZakatTracker(file_path)
+                self.db.save()
                 self.db.snapshot()
                 self.db.load(file_path)
                 self.db.save()
@@ -464,21 +497,27 @@ class ZakatLedger(toga.App):
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         self.show_raw_data_switch = toga.Switch(self.i18n.t('show_raw_data'))
 
-        stats = self.db.stats()
-
-        # ram_size
-        ram_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
-        ram_size_label = toga.Label(self.i18n.t('ram_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        ram_size_value = toga.Label(stats['ram'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
-        ram_size_box.add(ram_size_label)
-        ram_size_box.add(ram_size_value)
+        ram_size_box = None
+        database_file_size_box = None
         
-        # database_file_size
-        database_file_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
-        database_file_size_label = toga.Label(self.i18n.t('database_file_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        database_file_size_value = toga.Label(stats['database'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
-        database_file_size_box.add(database_file_size_label)
-        database_file_size_box.add(database_file_size_value)
+        try:
+            stats = self.db.stats()
+
+            # ram_size
+            ram_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+            ram_size_label = toga.Label(self.i18n.t('ram_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            ram_size_value = toga.Label(stats['ram'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+            ram_size_box.add(ram_size_label)
+            ram_size_box.add(ram_size_value)
+            
+            # database_file_size
+            database_file_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+            database_file_size_label = toga.Label(self.i18n.t('database_file_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            database_file_size_value = toga.Label(stats['database'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+            database_file_size_box.add(database_file_size_label)
+            database_file_size_box.add(database_file_size_value)
+        except Exception:
+            pass
 
         # load_time
         load_time_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
@@ -507,10 +546,12 @@ class ZakatLedger(toga.App):
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(file_server_button)
         self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(ram_size_box)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(database_file_size_box)
-        self.main_data_management_page.add(toga.Divider())
+        if ram_size_box:
+            self.main_data_management_page.add(ram_size_box)
+            self.main_data_management_page.add(toga.Divider())
+        if database_file_size_box:
+            self.main_data_management_page.add(database_file_size_box)
+            self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(load_time_box)
         self.main_data_management_page.add(toga.Divider())
         if hasattr(self, 'refresh_time'):
