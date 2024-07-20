@@ -98,6 +98,7 @@ translations = {
     # accounts_page
     'add': 'Add',
     'accounts_table_note': 'One-click to view details of boxes or logs in the account',
+    'table_pagination_label': 'Number of records {} each page has {} element - Page {} of {}',
     'transfer': 'Transfer',
     'account': 'Account',
     'balance': 'Balance',

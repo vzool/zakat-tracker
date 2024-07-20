@@ -98,6 +98,7 @@ translations = {
     # accounts_page 
     'add': 'إضافة (Add)',
     'accounts_table_note': 'اضغط ضغطة واحدة لعرض تفاصيل الصناديق أو الحركات في الحساب',
+    'table_pagination_label': 'عدد السجلات {} كل صفحة بها {} عنصر - الصفحة {} من {}',
     'transfer': 'تحويل (Transfer)',
     'account': 'الحساب (Account)',
     'balance': 'الرصيد (Balance)',
