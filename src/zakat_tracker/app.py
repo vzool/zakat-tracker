@@ -474,17 +474,8 @@ class ZakatLedger(toga.App):
             if self.android:
                 from android.content import Intent
                 from androidx.core.content import FileProvider
-                from android.net import Uri
+                # from android.net import Uri
                 from java.io import File
-                # # causes
-                # # W/python.stderr: Error in async handler: file:///data/data/net.vzool.zakat_tracker.zakat_tracker/files/data/zakat.pickle exposed beyond app through ClipData.Item.getUri()
-                # # android.os.FileUriExposedException
-                # file_path = self.db.path()
-                # file = File(str(file_path))
-                # intent = Intent(Intent.ACTION_SEND)
-                # intent.setType("*/*")
-                # intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
-                # intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
 
                 context = self._impl.native
                 shared_folder = File(context.getCacheDir(), "shared")
@@ -507,13 +498,6 @@ class ZakatLedger(toga.App):
                 intent.setType("*/*")
                 intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
                 intent.putExtra(Intent.EXTRA_STREAM, file_intent)
-                # intent = Intent(Intent.ACTION_SEND)
-                # intent.setType("image/*")
-                # intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
-                # intent.setAction(Intent.ACTION_SEND)
-                # intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file))
-                # intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                # intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 def on_complete(code, data):
                     # Activity.RESULT_CANCELED == 0
                     print('on_complete', code, data)
@@ -523,7 +507,6 @@ class ZakatLedger(toga.App):
                     # else:
                     #     result.set_result(None)
                 self._impl.start_activity(Intent.createChooser(intent, self.i18n.t('export_database_file')), on_complete=on_complete)
-                # self._impl.start_activity(intent, on_complete=on_complete)
                 return
             file_path = await self.main_window.save_file_dialog(
                 self.i18n.t('save_database_file'),
