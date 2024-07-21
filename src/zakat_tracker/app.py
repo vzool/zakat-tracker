@@ -17,6 +17,7 @@ from .file_server import start_file_server
 import pathlib
 import json
 import asyncio
+import threading
 from time import time_ns
 
 def format_number(x) -> str:
@@ -534,8 +535,16 @@ class ZakatLedger(toga.App):
                 try:
                     self.db.save()
                     self.db.snapshot()
-                    result = self.db.import_csv(file_path)
-                    print('result', result)
+                    ########### THREAD ###########
+                    self.thread_done = False
+                    def thread():
+                        self.thread_result = self.db.import_csv(file_path)
+                        print('result', self.thread_result)
+                        self.thread_done = True
+                    threading.Thread(target=thread).start()
+                    while not self.thread_done:
+                        await asyncio.sleep(1)
+                    ########### THREAD ###########
                     self.db.save()
                     self.refresh(widget)
                     self.main_window.info_dialog(
