@@ -74,6 +74,8 @@ translations = {
     'open_in_web_browser': 'Open in Web Browser',
 
     # data_management_page
+    'reset_data': 'Reset Database',
+    'on_reset_database_message': 'Do you really want to clear the database?',
     'show_data': 'Show Data',
     'show_raw_data': 'Show Raw Data',
     'open_database_file': 'Open Database File',

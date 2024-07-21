@@ -41,7 +41,7 @@ class ZakatLedger(toga.App):
         self.load_config()
         self.load_translations()
 
-        def on_exit(widget):
+        def on_exit(app):
             def on_result(window, confirmed):
                 if not confirmed:
                     print('cancelled')
@@ -433,6 +433,28 @@ class ZakatLedger(toga.App):
         print('data_management_page')
         self.title(self.i18n.t('data_management'))
         self.main_data_management_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+
+        def reset_database(widget):
+            def on_result(window, confirmed):
+                if not confirmed:
+                    print('cancelled')
+                    return
+                print('confirmed')
+                self.db.save()
+                self.db.snapshot()
+                self.db.reset()
+                self.db.save()
+                self.refresh(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('operation_accomplished_successfully'),
+                )
+            self.main_window.confirm_dialog(
+                self.i18n.t('reset_data'),
+                self.i18n.t('on_reset_database_message'),
+                on_result=on_result,
+            )
+        reset_data_button = toga.Button(self.i18n.t('reset_data'), on_press=reset_database, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         show_data_button = toga.Button(self.i18n.t('show_data'), on_press=self.show_data_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         file_server_button = toga.Button(self.i18n.t('file_server'), on_press=self.file_server_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
@@ -624,6 +646,8 @@ class ZakatLedger(toga.App):
             refresh_time_box.add(refresh_time_label)
             refresh_time_box.add(refresh_time_value)
 
+        self.main_data_management_page.add(reset_data_button)
+        self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(self.show_raw_data_switch)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(show_data_button)
