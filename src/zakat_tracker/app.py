@@ -31,6 +31,8 @@ class ZakatLedger(toga.App):
     def startup(self):
         
         self.debug = False
+        self.debug_loading_page = False
+
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
         self.datetime_supported = self.os in ['android', 'windows']
@@ -43,7 +45,6 @@ class ZakatLedger(toga.App):
         self.load_config()
         self.load_translations()
 
-        self.debug_loading_page = False
 
         def on_exit(app):
             def on_result(window, confirmed):
