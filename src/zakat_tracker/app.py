@@ -16,6 +16,7 @@ from .neknaj_jsonviewer import json_viewer
 from .file_server import start_file_server
 import pathlib
 import json
+import asyncio
 
 def format_number(x) -> str:
     y = str(x).rstrip('0').rstrip('.')
@@ -429,6 +430,28 @@ class ZakatLedger(toga.App):
         page.add(back_button)
         self.main_window.content = page
 
+    def loading_page(self, widget):
+        print('loading_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, padding=(150,0), text_direction=self.dir))
+        animation_label = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=60, text_direction=self.dir))
+        page_label = toga.Label(self.i18n.t('loading'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=21, text_direction=self.dir))
+        page.add(animation_label)
+        page.add(page_label)
+        # page.add(toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir)))
+        async def loading_animation(widget, **kwargs):
+            print('loading_animation')
+            text = ["◑", "◒", "◐", "◓"] # REF https://github.com/jaywcjlove/loading-cli
+            i = 0
+            while self.main_window.content == page:
+                print('loading_animation', i)
+                animation_label.text = text[i]
+                i += 1
+                if i >= len(text):
+                    i = 0
+                await asyncio.sleep(0.3)
+        self.add_background_task(loading_animation)
+        return page
+
     def data_management_page(self, widget):
         print('data_management_page')
         self.title(self.i18n.t('data_management'))
@@ -483,22 +506,27 @@ class ZakatLedger(toga.App):
             print('open_file_dialog', file_path)
             if not file_path:
                 return
+            self.main_window.content = self.loading_page(widget)
             try:
-                self.db.save()
-                self.db.snapshot()
-                result = self.db.import_csv(file_path)
-                print('result', result)
-                self.db.save()
-                self.refresh(widget)
-                self.main_window.info_dialog(
-                    self.i18n.t('message_status'),
-                    self.i18n.t('operation_accomplished_successfully'),
-                )
+                async def import_csv_task(widget, **kwargs):
+                    self.db.save()
+                    self.db.snapshot()
+                    result = self.db.import_csv(file_path)
+                    print('result', result)
+                    self.db.save()
+                    self.refresh(widget)
+                    self.main_window.info_dialog(
+                        self.i18n.t('message_status'),
+                        self.i18n.t('operation_accomplished_successfully'),
+                    )
+                    self.goto_main_data_management_page(widget)
+                self.add_background_task(import_csv_task)
             except Exception as e:
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),
                     str(e),
                 )
+                self.goto_main_data_management_page(widget)
         import_csv_file_button = toga.Button(self.i18n.t('import_csv_file'), on_press=import_csv_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         async def import_database_file(widget):
@@ -526,22 +554,27 @@ class ZakatLedger(toga.App):
             print('open_file_dialog', file_path)
             if not file_path:
                 return
+            self.main_window.content = self.loading_page(widget)
             try:
-                ZakatTracker(file_path)
-                self.db.save()
-                self.db.snapshot()
-                self.db.load(file_path)
-                self.db.save()
-                self.refresh(widget)
-                self.main_window.info_dialog(
-                    self.i18n.t('message_status'),
-                    self.i18n.t('operation_accomplished_successfully'),
-                )
+                async def import_database_task(widget, **kwargs):
+                    ZakatTracker(file_path)
+                    self.db.save()
+                    self.db.snapshot()
+                    self.db.load(file_path)
+                    self.db.save()
+                    self.refresh(widget)
+                    self.main_window.info_dialog(
+                        self.i18n.t('message_status'),
+                        self.i18n.t('operation_accomplished_successfully'),
+                    )
+                    self.goto_main_data_management_page(widget)
+                self.add_background_task(import_database_task)
             except Exception as e:
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),
                     str(e),
                 )
+                self.goto_main_data_management_page(widget)
         import_database_file_button = toga.Button(self.i18n.t('import_database_file'), on_press=import_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         async def export_database_file(widget):

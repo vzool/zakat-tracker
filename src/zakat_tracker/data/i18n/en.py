@@ -73,6 +73,9 @@ translations = {
     # file_server_page
     'open_in_web_browser': 'Open in Web Browser',
 
+    # loading_page
+    'loading': 'Loading',
+
     # data_management_page
     'reset_data': 'Reset Database',
     'on_reset_database_message': 'Do you really want to clear the database?',

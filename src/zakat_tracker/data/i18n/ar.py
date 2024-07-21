@@ -73,6 +73,9 @@ translations = {
     # file_server_page
     'open_in_web_browser': 'فتح في متصفح الويب',
 
+    # loading_page
+    'loading': 'جاري التحميل',
+
     # data_management_page
     'reset_data': 'مسح قاعدة البيانات',
     'on_reset_database_message': 'هل ترغب بالفعل في مسح قاعدة البيانات؟',
