@@ -17,6 +17,7 @@ from .file_server import start_file_server
 import pathlib
 import json
 import asyncio
+from time import time_ns
 
 def format_number(x) -> str:
     y = str(x).rstrip('0').rstrip('.')
@@ -41,6 +42,8 @@ class ZakatLedger(toga.App):
         self.load_db()
         self.load_config()
         self.load_translations()
+
+        self.debug_loading_page = False
 
         def on_exit(app):
             def on_result(window, confirmed):
@@ -70,10 +73,10 @@ class ZakatLedger(toga.App):
         self.main_tabs_page()
         self.main_window.show()
         self.finish_time = ZakatTracker.time()
-        self.load_time = self.time(self.finish_time - start_time)
+        self.load_time = self.format_time(self.finish_time - start_time)
         print(self.load_time)
 
-    def time(self, diff: int):
+    def format_time(self, diff: int):
         return ZakatTracker.duration_from_nanoseconds(
             diff,
             spoken_time_separator = self.i18n.t('spoken_time_separator'),
@@ -148,7 +151,7 @@ class ZakatLedger(toga.App):
         self.refresh_zakat_page()
         self.update_history(widget)
         finish = ZakatTracker.time()
-        self.refresh_time = self.time(finish - start)
+        self.refresh_time = self.format_time(finish - start)
         print(self.refresh_time)
 
     def zakat_page(self):
@@ -435,12 +438,17 @@ class ZakatLedger(toga.App):
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, padding=(150,0), text_direction=self.dir))
         animation_label = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=60, text_direction=self.dir))
         page_label = toga.Label(self.i18n.t('loading'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=21, text_direction=self.dir))
+        timer_label = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=12, text_direction=self.dir))
         page.add(animation_label)
         page.add(page_label)
-        # page.add(toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir)))
+        page.add(timer_label)
+        if self.debug_loading_page:
+            page.add(toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir)))
+        # loading_animation
+        text = ["◑", "◒", "◐", "◓"] # REF https://github.com/jaywcjlove/loading-cli
+        animation_label.text = text[0]
         async def loading_animation(widget, **kwargs):
             print('loading_animation')
-            text = ["◑", "◒", "◐", "◓"] # REF https://github.com/jaywcjlove/loading-cli
             i = 0
             while self.main_window.content == page:
                 print('loading_animation', i)
@@ -449,11 +457,25 @@ class ZakatLedger(toga.App):
                 if i >= len(text):
                     i = 0
                 await asyncio.sleep(0.3)
+        # timer
+        start = time_ns()
+        coloned_time, _ = self.format_time(time_ns() - start)
+        timer_label.text = coloned_time
+        async def timer(widget, **kwargs):
+            print('timeer')
+            while self.main_window.content == page:
+                coloned_time, _ = self.format_time(time_ns() - start)
+                timer_label.text = coloned_time
+                await asyncio.sleep(0.1)
         self.add_background_task(loading_animation)
+        self.add_background_task(timer)
         return page
 
     def data_management_page(self, widget):
         print('data_management_page')
+        if self.debug_loading_page:
+            self.main_window.content = self.loading_page(widget)
+            return
         self.title(self.i18n.t('data_management'))
         self.main_data_management_page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
