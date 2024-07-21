@@ -41,6 +41,21 @@ class ZakatLedger(toga.App):
         self.load_config()
         self.load_translations()
 
+        def on_exit(widget):
+            def on_result(window, confirmed):
+                if not confirmed:
+                    print('cancelled')
+                    return
+                print('confirmed')
+                self.exit()
+            self.main_window.confirm_dialog(
+                self.i18n.t('on_exit_title'),
+                self.i18n.t('on_exit_message'),
+                on_result=on_result,
+            )
+            return False
+        self.on_exit = on_exit
+
         # logo_view = toga.ImageView(id="view", image="resources/zakat_tracker_logo.png")
         # logo_view.style.padding = 120
         # logo_view.style.flex = 1

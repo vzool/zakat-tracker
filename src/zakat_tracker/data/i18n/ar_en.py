@@ -17,6 +17,10 @@ translations = {
     'microSeconds': 'مايكرو ثانية',
     'nanoSeconds': 'نانو ثانية',
 
+    # startup
+    'on_exit_title': 'تأكيد الخروج (Exit Confirmation)',
+    'on_exit_message': 'هل أنت متأكد أنك تريد الخروج من التطبيق؟',
+
     # main_tabs_page
     'accounts': 'الحسابات (Accounts)',
     'zakat': 'الزكاة (Zakat)',

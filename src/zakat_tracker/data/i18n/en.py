@@ -17,6 +17,10 @@ translations = {
     'microSeconds': 'MicroSeconds',
     'nanoSeconds': 'NanoSeconds',
 
+    # startup
+    'on_exit_title': 'Exit Confirmation',
+    'on_exit_message': 'Are you sure you want to exit the application?',
+
     # main_tabs_page
     'accounts': 'Accounts',
     'zakat': 'Zakat',
