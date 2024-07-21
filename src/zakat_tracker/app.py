@@ -25,6 +25,10 @@ def format_number(x) -> str:
 
 start_time = ZakatTracker.time()
 
+ACCOUNTS_PAGE_INDEX = 0
+ZAKAT_PAGE_INDEX = 1
+HISTORY_PAGE_INDEX = 2
+
 class ZakatLedger(toga.App):
     def startup(self):
         
@@ -114,6 +118,14 @@ class ZakatLedger(toga.App):
 
     def main_tabs_page(self):
         print('main_tabs_page')
+        self.main_tabs_page_index = ACCOUNTS_PAGE_INDEX
+        def on_select(widget):
+            index = widget.current_tab.index
+            print('on_select', index)
+            self.main_tabs_page_index = index
+            if index > 2:
+                return
+            self.refresh(widget, index)
         self.main_box = toga.OptionContainer(
             content=[
                 (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
@@ -122,15 +134,19 @@ class ZakatLedger(toga.App):
                 (self.i18n.t('settings'), self.settings_page(), toga.Icon("resources/icon/settings.png")),
             ],
             style=Pack(text_direction=self.dir),
+            on_select=on_select,
         )
         self.main_window.content = self.main_box
 
-    def refresh(self, widget):
-        print('refresh')
+    def refresh(self, widget, index = ACCOUNTS_PAGE_INDEX):
+        print('refresh', index)
         start = ZakatTracker.time()
-        self.update_accounts(widget)
-        self.refresh_zakat_page()
-        self.update_history(widget)
+        if index == ACCOUNTS_PAGE_INDEX or index is None:
+            self.update_accounts(widget)
+        if index == ZAKAT_PAGE_INDEX or index is None:
+            self.refresh_zakat_page()
+        if index == HISTORY_PAGE_INDEX or index is None:
+            self.update_history(widget)
         finish = ZakatTracker.time()
         self.refresh_time = self.time(finish - start)
         print(self.refresh_time)
@@ -149,6 +165,8 @@ class ZakatLedger(toga.App):
 
         # refresh_button
         def refresh_zakat_page(widget = None):
+            if self.main_tabs_page_index != ZAKAT_PAGE_INDEX:
+                return
             self.update_accounts(widget)
             self.zakat_plan = self.db.check(
                 silver_gram_price=self.config_silver_gram_price_in_local_currency,
@@ -265,7 +283,7 @@ class ZakatLedger(toga.App):
             self.db.free(self.db.lock())
             if self.db.recall(dry=False, debug=self.debug):
                 self.db.save()
-                self.refresh(widget)
+                self.refresh(widget, HISTORY_PAGE_INDEX)
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
                     self.i18n.t('recover_success'),
@@ -303,7 +321,7 @@ class ZakatLedger(toga.App):
                 self.i18n.t('logs'),
             ],
             missing_value="-",
-            data=self.history_table_items(),
+            # data=self.history_table_items(),
             on_select=self.history_table_on_select,
             on_activate=lambda e, row: self.main_window.info_dialog(
                 self.i18n.t('row_details'),
@@ -665,7 +683,7 @@ class ZakatLedger(toga.App):
         def show_hidden_accounts(status):
                 self.config_show_hidden_accounts = status
                 self.config.set('show_hidden_accounts', status)
-                self.refresh(self)
+                self.refresh(self, ACCOUNTS_PAGE_INDEX)
         show_hidden_accounts_switch = toga.Switch(
             self.i18n.t('show_hidden_accounts'),
             value=self.config_show_hidden_accounts,
@@ -929,7 +947,7 @@ class ZakatLedger(toga.App):
         # zakatable_switch
         def zakatable(status):
             self.db.zakatable(account, status)
-            self.refresh(account)
+            self.refresh(account, ZAKAT_PAGE_INDEX)
             self.db.save()
         zakatable_switch = toga.Switch(
             self.i18n.t('zakatable'),
@@ -1174,7 +1192,7 @@ class ZakatLedger(toga.App):
             return
         ref = getattr(widget.selection, access_key)
         print('history_table_on_select', ref)
-        self.refresh(widget)
+        self.refresh(widget, HISTORY_PAGE_INDEX)
         self.history_details_page(widget, ref)
 
     def account_table_on_select(self, widget):
@@ -1185,7 +1203,7 @@ class ZakatLedger(toga.App):
             return
         account = getattr(widget.selection, access_key)
         print('account_table_on_activate', account)
-        self.refresh(widget)
+        self.refresh(widget, ACCOUNTS_PAGE_INDEX)
         self.account_tabs_page(widget, account)
 
     def account_table_on_activate(self, widget, row: toga.sources.list_source.Row):
@@ -1513,7 +1531,7 @@ class ZakatLedger(toga.App):
                     return
                     
                 self.db.save()
-                self.refresh(widget)
+                self.refresh(widget, ZAKAT_PAGE_INDEX)
                 self.main_window.content = self.main_box
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
@@ -1594,7 +1612,7 @@ class ZakatLedger(toga.App):
             else:
                 self.db.track(amount, desc, account, created=ZakatTracker.time(datetime_value))
             self.db.save()
-            self.refresh(widget)
+            self.refresh(widget, ACCOUNTS_PAGE_INDEX)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
                 self.i18n.t('message_status'),
@@ -1635,7 +1653,7 @@ class ZakatLedger(toga.App):
         try:
             self.db.transfer(amount, from_account, to_account, desc, created=ZakatTracker.time(datetime_value))
             self.db.free(self.db.lock()) # !!! need-revise: update zakat library, it should be auto freed.
-            self.refresh(widget)
+            self.refresh(widget, ACCOUNTS_PAGE_INDEX)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
                 self.i18n.t('message_status'),
