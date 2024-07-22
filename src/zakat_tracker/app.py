@@ -772,31 +772,33 @@ class ZakatLedger(toga.App):
             refresh_time_box.add(refresh_time_label)
             refresh_time_box.add(refresh_time_value)
 
-        self.main_data_management_page.add(reset_data_button)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(self.show_raw_data_switch)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(show_data_button)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(import_csv_file_button)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(import_database_file_button)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(export_database_file_button)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(file_server_button)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(ram_size_box)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(database_file_size_box)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(calculating_database_stats_on_startup_switch)
-        self.main_data_management_page.add(toga.Divider())
-        self.main_data_management_page.add(load_time_box)
-        self.main_data_management_page.add(toga.Divider())
+        page = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, flex=1))
+        page.add(reset_data_button)
+        page.add(toga.Divider())
+        page.add(self.show_raw_data_switch)
+        page.add(toga.Divider())
+        page.add(show_data_button)
+        page.add(toga.Divider())
+        page.add(import_csv_file_button)
+        page.add(toga.Divider())
+        page.add(import_database_file_button)
+        page.add(toga.Divider())
+        page.add(export_database_file_button)
+        page.add(toga.Divider())
+        page.add(file_server_button)
+        page.add(toga.Divider())
+        page.add(ram_size_box)
+        page.add(toga.Divider())
+        page.add(database_file_size_box)
+        page.add(toga.Divider())
+        page.add(calculating_database_stats_on_startup_switch)
+        page.add(toga.Divider())
+        page.add(load_time_box)
+        page.add(toga.Divider())
         if hasattr(self, 'refresh_time'):
-            self.main_data_management_page.add(refresh_time_box)
-            self.main_data_management_page.add(toga.Divider())
+            page.add(refresh_time_box)
+            page.add(toga.Divider())
+        self.main_data_management_page.add(toga.ScrollContainer(style=Pack(flex=1), content=page))
         self.main_data_management_page.add(back_button)
         self.main_window.content = self.main_data_management_page
 
@@ -918,7 +920,7 @@ class ZakatLedger(toga.App):
         page.add(zakat_version_box)
         page.add(toga.Divider())
         page.add(app_version_box)
-        return page
+        return toga.ScrollContainer(content=page, style=Pack(flex=1))
 
     @staticmethod
     def paginate(items: list, page_size: int, page_number: int) -> tuple[int, int, int]:
@@ -1641,12 +1643,12 @@ class ZakatLedger(toga.App):
         form.add(footer)
         form.add(toga.Divider())
 
-        self.main_window.content = toga.ScrollContainer(content=form, style=Pack(text_direction=self.dir))
+        self.main_window.content = toga.ScrollContainer(content=form, style=Pack(flex=1, text_direction=self.dir))
 
     def transfer_form(self, widget):
         print('transfer_form')
 
-        transfer_form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
         # header
         form_label = toga.Label(self.i18n.t('financial_transfer_form'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -1687,23 +1689,25 @@ class ZakatLedger(toga.App):
         to_account_box.add(self.to_account_input)
 
         # form
-        transfer_form.add(form_label)
-        transfer_form.add(toga.Divider())
-        transfer_form.add(from_account_box)
-        transfer_form.add(toga.Divider())
-        transfer_form.add(to_account_box)
-        transfer_form.add(toga.Divider())
-        transfer_form.add(self.desc_widget())
-        transfer_form.add(toga.Divider())
-        transfer_form.add(self.amount_widget())
-        transfer_form.add(self.label_note_widget(self.i18n.t('transfer_amount_note')))
-        transfer_form.add(toga.Divider())
-        transfer_form.add(self.datetime_widget())
-        transfer_form.add(toga.Divider())
+        page.add(form_label)
+        page.add(toga.Divider())
+        page.add(from_account_box)
+        page.add(toga.Divider())
+        page.add(to_account_box)
+        page.add(toga.Divider())
+        page.add(self.desc_widget())
+        page.add(toga.Divider())
+        page.add(self.amount_widget())
+        page.add(self.label_note_widget(self.i18n.t('transfer_amount_note')))
+        page.add(toga.Divider())
+        page.add(self.datetime_widget())
+        page.add(toga.Divider())
+        transfer_form = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        transfer_form.add(toga.ScrollContainer(content=page, style=Pack(flex=1, text_direction=self.dir)))
         transfer_form.add(self.footer_widget(self.i18n.t('transfer'), on_press=self.transfer))
         transfer_form.add(toga.Divider())
 
-        self.main_window.content = toga.ScrollContainer(content=transfer_form, style=Pack(text_direction=self.dir))
+        self.main_window.content = transfer_form
 
     def form(self, widget):
         print('form')
@@ -1771,10 +1775,13 @@ class ZakatLedger(toga.App):
         form.add(toga.Divider())
         form.add(self.datetime_widget())
         form.add(toga.Divider())
-        form.add(self.footer_widget(self.i18n.t('save'), on_press=self.save))
-        form.add(toga.Divider())
 
-        self.main_window.content = toga.ScrollContainer(content=form, style=Pack(text_direction=self.dir))
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        page.add(toga.ScrollContainer(content=form, style=Pack(flex=1, text_direction=self.dir)))
+        page.add(self.footer_widget(self.i18n.t('save'), on_press=self.save))
+        page.add(toga.Divider())
+
+        self.main_window.content = page
 
     # actions
 
