@@ -90,7 +90,7 @@ class ZakatLedger(toga.App):
                 await asyncio.sleep(1)
             ############ UI THREAD ############
             #----------------------------------
-            if self.thread_exception:
+            if self.thread_exception and os.path.exists(self.db.path()):
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),
                     str(self.thread_exception) + '\n' + self.coloned_time,
