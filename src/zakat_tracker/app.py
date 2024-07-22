@@ -77,6 +77,7 @@ class ZakatLedger(toga.App):
             def thread():
                 try:
                     self.load_db()
+                    self.stats = self.db.stats()
                 except Exception as e:
                     self.thread_exception = e
                 finally:
@@ -724,28 +725,20 @@ class ZakatLedger(toga.App):
         export_database_file_button = toga.Button(self.i18n.t('export_database_file'), on_press=export_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         self.show_raw_data_switch = toga.Switch(self.i18n.t('show_raw_data'))
-
-        ram_size_box = None
-        database_file_size_box = None
         
-        try:
-            stats = self.db.stats()
-
-            # ram_size
-            ram_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
-            ram_size_label = toga.Label(self.i18n.t('ram_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-            ram_size_value = toga.Label(stats['ram'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
-            ram_size_box.add(ram_size_label)
-            ram_size_box.add(ram_size_value)
-            
-            # database_file_size
-            database_file_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
-            database_file_size_label = toga.Label(self.i18n.t('database_file_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-            database_file_size_value = toga.Label(stats['database'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
-            database_file_size_box.add(database_file_size_label)
-            database_file_size_box.add(database_file_size_value)
-        except Exception:
-            pass
+        # ram_size
+        ram_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        ram_size_label = toga.Label(self.i18n.t('ram_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        ram_size_value = toga.Label(self.stats['ram'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        ram_size_box.add(ram_size_label)
+        ram_size_box.add(ram_size_value)
+        
+        # database_file_size
+        database_file_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        database_file_size_label = toga.Label(self.i18n.t('database_file_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        database_file_size_value = toga.Label(self.stats['database'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        database_file_size_box.add(database_file_size_label)
+        database_file_size_box.add(database_file_size_value)
 
         # load_time
         load_time_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
@@ -776,12 +769,10 @@ class ZakatLedger(toga.App):
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(file_server_button)
         self.main_data_management_page.add(toga.Divider())
-        if ram_size_box:
-            self.main_data_management_page.add(ram_size_box)
-            self.main_data_management_page.add(toga.Divider())
-        if database_file_size_box:
-            self.main_data_management_page.add(database_file_size_box)
-            self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(ram_size_box)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(database_file_size_box)
+        self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(load_time_box)
         self.main_data_management_page.add(toga.Divider())
         if hasattr(self, 'refresh_time'):
