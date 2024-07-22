@@ -450,7 +450,7 @@ class ZakatLedger(toga.App):
         text = ["◑", "◒", "◐", "◓"] # REF https://github.com/jaywcjlove/loading-cli
         animation_label.text = text[0]
         async def loading_animation(widget, **kwargs):
-            print('loading_animation')
+            print('loading_animation is playing...')
             i = 0
             while self.main_window.content == page:
                 animation_label.text = text[i]
@@ -458,16 +458,18 @@ class ZakatLedger(toga.App):
                 if i >= len(text):
                     i = 0
                 await asyncio.sleep(0.3)
+            print('loading_animation stopped.')
         # timer
         start = time_ns()
-        coloned_time, _ = self.format_time(time_ns() - start)
-        timer_label.text = coloned_time
+        self.coloned_time, _ = self.format_time(time_ns() - start)
+        timer_label.text = self.coloned_time
         async def timer(widget, **kwargs):
-            print('timer')
+            print('the timer is started...')
             while self.main_window.content == page:
-                coloned_time, _ = self.format_time(time_ns() - start)
-                timer_label.text = coloned_time
+                self.coloned_time, _ = self.format_time(time_ns() - start)
+                timer_label.text = self.coloned_time
                 await asyncio.sleep(0.1)
+            print('the timer stopped.')
         self.add_background_task(loading_animation)
         self.add_background_task(timer)
         return page
@@ -531,38 +533,43 @@ class ZakatLedger(toga.App):
                 return
             self.main_window.content = self.loading_page(widget)
             async def import_csv_task(widget, **kwargs):
-                try:
-                    #----------------------------------
-                    ########### TASK THREAD ###########
-                    self.thread_done = False
-                    def thread():
+                #----------------------------------
+                ########### TASK THREAD ###########
+                self.thread_done = False
+                self.thread_result = None
+                self.thread_exception = None
+                def thread():
+                    try:
                         self.db.save()
                         self.db.lock()
                         self.db.snapshot()
                         self.thread_result = self.db.import_csv(file_path)
                         self.db.save()
                         print('result', self.thread_result)
+                    except Exception as e:
+                        self.thread_exception = e
+                    finally:
                         self.thread_done = True
-                    threading.Thread(target=thread).start()
-                    ########### TASK THREAD ###########
-                    #----------------------------------
-                    ############ UI THREAD ############
-                    while not self.thread_done:
-                        await asyncio.sleep(1)
-                    ############ UI THREAD ############
-                    #----------------------------------
-                    self.refresh(widget)
-                    self.main_window.info_dialog(
-                        self.i18n.t('message_status'),
-                        self.i18n.t('operation_accomplished_successfully'),
-                    )
-                except Exception as e:
+                threading.Thread(target=thread).start()
+                ########### TASK THREAD ###########
+                #----------------------------------
+                ############ UI THREAD ############
+                while not self.thread_done:
+                    await asyncio.sleep(1)
+                ############ UI THREAD ############
+                #----------------------------------
+                if self.thread_exception:
                     self.main_window.error_dialog(
                         self.i18n.t('unexpected_error'),
-                        str(e),
+                        str(self.thread_exception) + '\n' + self.coloned_time,
                     )
-                finally:
-                    self.goto_main_data_management_page(widget)
+                    return
+                self.refresh(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('operation_accomplished_successfully') + '\n' + self.coloned_time,
+                )
+                self.goto_main_data_management_page(widget)
             self.add_background_task(import_csv_task)
         import_csv_file_button = toga.Button(self.i18n.t('import_csv_file'), on_press=import_csv_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
@@ -593,24 +600,41 @@ class ZakatLedger(toga.App):
                 return
             self.main_window.content = self.loading_page(widget)
             async def import_database_task(widget, **kwargs):
-                try:
-                    ZakatTracker(file_path)
-                    self.db.save()
-                    self.db.snapshot()
-                    self.db.load(file_path)
-                    self.db.save()
-                    self.refresh(widget)
-                    self.main_window.info_dialog(
-                        self.i18n.t('message_status'),
-                        self.i18n.t('operation_accomplished_successfully'),
-                    )
-                except Exception as e:
+                #----------------------------------
+                ########### TASK THREAD ###########
+                self.thread_done = False
+                self.thread_exception = None
+                def thread():
+                    try:
+                        ZakatTracker(file_path)
+                        self.db.save()
+                        self.db.snapshot()
+                        self.db.load(file_path)
+                        self.db.save()
+                    except Exception as e:
+                        self.thread_exception = e
+                    finally:
+                        self.thread_done = True
+                threading.Thread(target=thread).start()
+                ########### TASK THREAD ###########
+                #----------------------------------
+                ############ UI THREAD ############
+                while not self.thread_done:
+                    await asyncio.sleep(1)
+                ############ UI THREAD ############
+                #----------------------------------
+                if self.thread_exception:
                     self.main_window.error_dialog(
                         self.i18n.t('unexpected_error'),
-                        str(e),
+                        str(self.thread_exception) + '\n' + self.coloned_time,
                     )
-                finally:
-                    self.goto_main_data_management_page(widget)
+                    return
+                self.refresh(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('operation_accomplished_successfully') + '\n' + self.coloned_time,
+                )
+                self.goto_main_data_management_page(widget)
             self.add_background_task(import_database_task)
         import_database_file_button = toga.Button(self.i18n.t('import_database_file'), on_press=import_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
