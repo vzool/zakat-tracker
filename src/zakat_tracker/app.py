@@ -1095,9 +1095,16 @@ class ZakatLedger(toga.App):
         print('boxes_page', account)
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
+        self.boxes_table_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
+        self.boxes_table_current_page = 1
+        self.boxes_table_items_per_page = 13
         # id, capital, count, last, rest, total
         self.boxes_table = toga.Table(
             headings=[
+                self.i18n.t('sn'),
                 self.i18n.t('date'),
                 self.i18n.t('rest'),
                 self.i18n.t('capital'),
@@ -1118,16 +1125,56 @@ class ZakatLedger(toga.App):
         page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
+        page.add(self.boxes_table_pagination_label)
+        page.add(toga.Divider())
         page.add(self.boxes_table)
+
+        buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def last(widget):
+            print('last')        
+            self.boxes_table_current_page = self.boxes_table_total_pages
+            self.update_boxes(widget, account)
+        def next(widget):
+            print('next')
+            if self.boxes_table_current_page < self.boxes_table_total_pages:
+                self.boxes_table_current_page += 1
+                self.update_boxes(widget, account)
+        def previous(widget):
+            print('previous')
+            if self.boxes_table_current_page > 1:
+                self.boxes_table_current_page -= 1
+                self.update_boxes(widget, account)
+        def first(widget):
+            print('first')
+            self.boxes_table_current_page = 1
+            self.update_boxes(widget, account)
+        first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        # refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        buttons_box.add(first_button)
+        buttons_box.add(previous_button)
+        # buttons_box.add(refresh_button)
+        buttons_box.add(next_button)
+        buttons_box.add(last_button)
+        page.add(buttons_box)
         return page
 
     def logs_page(self, widget, account):
         print('logs_page', account)
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
+        self.logs_table_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
+        self.logs_table_current_page = 1
+        self.logs_table_items_per_page = 13
         # id, value, desc
         self.logs_table = toga.Table(
             headings=[
+                self.i18n.t('sn'),
                 self.i18n.t('date'),
                 self.i18n.t('value'),
                 self.i18n.t('desc'),
@@ -1145,7 +1192,40 @@ class ZakatLedger(toga.App):
         page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
+        page.add(self.logs_table_pagination_label)
+        page.add(toga.Divider())
         page.add(self.logs_table)
+
+        buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def last(widget):
+            print('last')        
+            self.logs_table_current_page = self.logs_table_total_pages
+            self.update_logs(widget, account)
+        def next(widget):
+            print('next')
+            if self.logs_table_current_page < self.logs_table_total_pages:
+                self.logs_table_current_page += 1
+                self.update_logs(widget, account)
+        def previous(widget):
+            print('previous')
+            if self.logs_table_current_page > 1:
+                self.logs_table_current_page -= 1
+                self.update_logs(widget, account)
+        def first(widget):
+            print('first')
+            self.logs_table_current_page = 1
+            self.update_logs(widget, account)
+        first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        # refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        buttons_box.add(first_button)
+        buttons_box.add(previous_button)
+        # buttons_box.add(refresh_button)
+        buttons_box.add(next_button)
+        buttons_box.add(last_button)
+        page.add(buttons_box)
         return page
 
     def exchanges_page(self, widget, account):
@@ -1158,9 +1238,16 @@ class ZakatLedger(toga.App):
             style=Pack(flex=1, text_direction=self.dir),
         )
 
+        self.exchanges_table_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
+        self.exchanges_table_current_page = 1
+        self.exchanges_table_items_per_page = 13
         # id, rate, description
         self.exchanges_table = toga.Table(
             headings=[
+                self.i18n.t('sn'),
                 self.i18n.t('date'),
                 self.i18n.t('rate'),
                 self.i18n.t('desc'),
@@ -1180,7 +1267,40 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('exchanges_note')))
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
+        page.add(self.exchanges_table_pagination_label)
+        page.add(toga.Divider())
         page.add(self.exchanges_table)
+
+        buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def last(widget):
+            print('last')        
+            self.exchanges_table_current_page = self.exchanges_table_total_pages
+            self.update_exchanges(widget, account)
+        def next(widget):
+            print('next')
+            if self.exchanges_table_current_page < self.exchanges_table_total_pages:
+                self.exchanges_table_current_page += 1
+                self.update_exchanges(widget, account)
+        def previous(widget):
+            print('previous')
+            if self.exchanges_table_current_page > 1:
+                self.exchanges_table_current_page -= 1
+                self.update_exchanges(widget, account)
+        def first(widget):
+            print('first')
+            self.exchanges_table_current_page = 1
+            self.update_exchanges(widget, account)
+        first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        # refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        buttons_box.add(first_button)
+        buttons_box.add(previous_button)
+        # buttons_box.add(refresh_button)
+        buttons_box.add(next_button)
+        buttons_box.add(last_button)
+        page.add(buttons_box)
         return page
 
     # generators
@@ -1238,7 +1358,7 @@ class ZakatLedger(toga.App):
         return chunk
 
     def boxes_table_items(self, account: str):
-        return [(
+        data = [(
             ZakatTracker.time_to_datetime(k),
             format_number(v['rest']),
             format_number(v['capital']),
@@ -1246,13 +1366,37 @@ class ZakatLedger(toga.App):
             ZakatTracker.time_to_datetime(v['last']) if v['last'] else '-',
             format_number(v['total']),
         ) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
+        chunk, self.boxes_table_total_pages, self.boxes_table_total_items = self.paginate(
+            data,
+            self.boxes_table_items_per_page,
+            self.boxes_table_current_page,
+        )
+        self.boxes_table_pagination_label.text = self.i18n.t('table_pagination_label').format(
+            format_number(self.boxes_table_total_items),
+            format_number(self.boxes_table_items_per_page),
+            format_number(self.boxes_table_current_page),
+            format_number(self.boxes_table_total_pages),
+        )
+        return chunk
 
     def logs_table_items(self, account: str):
-        return [(
+        data = [(
             ZakatTracker.time_to_datetime(k),
             format_number(v['value']),
             v['desc'],
         ) for k,v in sorted(self.db.logs(account).items(), reverse=True)]
+        chunk, self.logs_table_total_pages, self.logs_table_total_items = self.paginate(
+            data,
+            self.logs_table_items_per_page,
+            self.logs_table_current_page,
+        )
+        self.logs_table_pagination_label.text = self.i18n.t('table_pagination_label').format(
+            format_number(self.logs_table_total_items),
+            format_number(self.logs_table_items_per_page),
+            format_number(self.logs_table_current_page),
+            format_number(self.logs_table_total_pages),
+        )
+        return chunk
 
     def exchanges_table_items(self, account: str):
         exchanges = self.db.exchanges()
@@ -1263,11 +1407,23 @@ class ZakatLedger(toga.App):
                 format_number(exchange['rate']),
                 exchange['description'],
             )]
-        return [(
+        data = [(
             ZakatTracker.time_to_datetime(k),
             format_number(v['rate']),
             v['description'],
         ) for k,v in sorted(exchanges[account].items(), reverse=True)]
+        chunk, self.exchanges_table_total_pages, self.exchanges_table_total_items = self.paginate(
+            data,
+            self.exchanges_table_items_per_page,
+            self.exchanges_table_current_page,
+        )
+        self.exchanges_table_pagination_label.text = self.i18n.t('table_pagination_label').format(
+            format_number(self.exchanges_table_total_items),
+            format_number(self.exchanges_table_items_per_page),
+            format_number(self.exchanges_table_current_page),
+            format_number(self.exchanges_table_total_pages),
+        )
+        return chunk
 
     def accounts_selection_items(self):
         return [""] + [ f'{k} ({v})' for k,v in sorted(self.db.accounts().items())]
@@ -1607,6 +1763,12 @@ class ZakatLedger(toga.App):
     
     def update_exchanges(self, widget, account):
         self.exchanges_table.data = self.exchanges_table_items(account)
+
+    def update_logs(self, widget, account):
+        self.logs_table.data = self.logs_table_items(account)
+
+    def update_boxes(self, widget, account):
+        self.boxes_table.data = self.boxes_table_items(account)
 
     def pay(self, widget):
         print('pay')
