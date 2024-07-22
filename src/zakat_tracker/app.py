@@ -42,10 +42,8 @@ class ZakatLedger(toga.App):
         print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
 
-        self.load_db()
         self.load_config()
         self.load_translations()
-
 
         def on_exit(app):
             def on_result(window, confirmed):
@@ -61,22 +59,46 @@ class ZakatLedger(toga.App):
             )
             return False
         self.on_exit = on_exit
-
-        # logo_view = toga.ImageView(id="view", image="resources/zakat_tracker_logo.png")
-        # logo_view.style.padding = 120
-        # logo_view.style.flex = 1
-        # self.main_box.add(logo_view)
-
         self.main_window = toga.MainWindow(
             title=self.i18n.t('formal_name'),
             size=(800, 600),
         )
+
         self._original_title = self.main_window.title
-        self.main_tabs_page()
+        self.main_window.content = self.loading_page(self)
         self.main_window.show()
-        self.finish_time = ZakatTracker.time()
-        self.load_time = self.format_time(self.finish_time - start_time)
-        print(self.load_time)
+
+        async def load_task(widget, **kwargs):
+            #----------------------------------
+            ########### TASK THREAD ###########
+            self.thread_done = False
+            self.thread_result = None
+            self.thread_exception = None
+            def thread():
+                try:
+                    self.load_db()
+                except Exception as e:
+                    self.thread_exception = e
+                finally:
+                    self.thread_done = True
+            threading.Thread(target=thread).start()
+            ########### TASK THREAD ###########
+            #----------------------------------
+            ############ UI THREAD ############
+            while not self.thread_done:
+                await asyncio.sleep(1)
+            ############ UI THREAD ############
+            #----------------------------------
+            if self.thread_exception:
+                self.main_window.error_dialog(
+                    self.i18n.t('unexpected_error'),
+                    str(self.thread_exception) + '\n' + self.coloned_time,
+                )
+            self.main_tabs_page()
+            self.finish_time = ZakatTracker.time()
+            self.load_time = self.format_time(self.finish_time - start_time)
+            print(self.load_time)
+        self.add_background_task(load_task)
 
     def format_time(self, diff: int):
         return ZakatTracker.duration_from_nanoseconds(
