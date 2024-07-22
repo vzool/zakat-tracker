@@ -81,7 +81,8 @@ class ZakatLedger(toga.App):
             def thread():
                 try:
                     self.load_db()
-                    self.stats = self.db.stats()
+                    if self.config_calculating_database_stats_on_startup:
+                        self.stats = self.db.stats()
                 except Exception as e:
                     self.thread_exception = e
                 finally:
@@ -145,6 +146,7 @@ class ZakatLedger(toga.App):
         self.config_silver_gram_price_in_local_currency = self.config.get('silver_gram_price_in_local_currency', 2.17)
         self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
         self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 355)
+        self.config_calculating_database_stats_on_startup = self.config.get('calculating_database_stats_on_startup', True)
 
         self.nisab = self.config_silver_gram_price_in_local_currency * self.config_silver_nisab_gram_quantity
 
@@ -729,14 +731,25 @@ class ZakatLedger(toga.App):
         export_database_file_button = toga.Button(self.i18n.t('export_database_file'), on_press=export_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         self.show_raw_data_switch = toga.Switch(self.i18n.t('show_raw_data'))
-        
+
+        # calculating database stats on startup
+        def calculating_database_stats_on_startup(status):
+                self.config_calculating_database_stats_on_startup = status
+                self.config.set('calculating_database_stats_on_startup', status)
+        calculating_database_stats_on_startup_switch = toga.Switch(
+            self.i18n.t('calculating_database_stats_on_startup'),
+            value=self.config_calculating_database_stats_on_startup,
+            on_change=lambda e: calculating_database_stats_on_startup(e.value),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+
         # ram_size
         ram_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
         ram_size_label = toga.Label(self.i18n.t('ram_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         ram_size_value = toga.Label(self.stats['ram'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
         ram_size_box.add(ram_size_label)
         ram_size_box.add(ram_size_value)
-        
+
         # database_file_size
         database_file_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
         database_file_size_label = toga.Label(self.i18n.t('database_file_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -776,6 +789,8 @@ class ZakatLedger(toga.App):
         self.main_data_management_page.add(ram_size_box)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(database_file_size_box)
+        self.main_data_management_page.add(toga.Divider())
+        self.main_data_management_page.add(calculating_database_stats_on_startup_switch)
         self.main_data_management_page.add(toga.Divider())
         self.main_data_management_page.add(load_time_box)
         self.main_data_management_page.add(toga.Divider())

@@ -87,6 +87,7 @@ translations = {
     'save_database_file': 'حفظ ملف قاعدة البيانات',
     'export_database_file': 'تصدير ملف قاعدة البيانات',
     'file_server': 'تشغيل خادم الملفات',
+    'calculating_database_stats_on_startup': 'حساب احصائيات قاعدة البيانات عند التحميل المبدئي',
     'ram_size': 'حجم ذاكرة التخزين المؤقتة',
     'database_file_size': 'حجم ملف قاعدة البيانات',
     'load_time': 'الوقت المستغرق للتحميل المبدئي',

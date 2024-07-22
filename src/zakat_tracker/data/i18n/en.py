@@ -87,6 +87,7 @@ translations = {
     'save_database_file': 'Save Database File',
     'export_database_file': 'Export Database File',
     'file_server': 'Run File Server',
+    'calculating_database_stats_on_startup': 'Calculate database statistics upon initial load',
     'ram_size': 'RAM Size',
     'database_file_size': 'Database File Size',
     'load_time': 'Time taken for initial startup',
