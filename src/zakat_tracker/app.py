@@ -453,7 +453,6 @@ class ZakatLedger(toga.App):
             print('loading_animation')
             i = 0
             while self.main_window.content == page:
-                print('loading_animation', i)
                 animation_label.text = text[i]
                 i += 1
                 if i >= len(text):
@@ -464,7 +463,7 @@ class ZakatLedger(toga.App):
         coloned_time, _ = self.format_time(time_ns() - start)
         timer_label.text = coloned_time
         async def timer(widget, **kwargs):
-            print('timeer')
+            print('timer')
             while self.main_window.content == page:
                 coloned_time, _ = self.format_time(time_ns() - start)
                 timer_label.text = coloned_time
@@ -533,19 +532,25 @@ class ZakatLedger(toga.App):
             self.main_window.content = self.loading_page(widget)
             async def import_csv_task(widget, **kwargs):
                 try:
-                    self.db.save()
-                    self.db.snapshot()
-                    ########### THREAD ###########
+                    #----------------------------------
+                    ########### TASK THREAD ###########
                     self.thread_done = False
                     def thread():
+                        self.db.save()
+                        self.db.lock()
+                        self.db.snapshot()
                         self.thread_result = self.db.import_csv(file_path)
+                        self.db.save()
                         print('result', self.thread_result)
                         self.thread_done = True
                     threading.Thread(target=thread).start()
+                    ########### TASK THREAD ###########
+                    #----------------------------------
+                    ############ UI THREAD ############
                     while not self.thread_done:
                         await asyncio.sleep(1)
-                    ########### THREAD ###########
-                    self.db.save()
+                    ############ UI THREAD ############
+                    #----------------------------------
                     self.refresh(widget)
                     self.main_window.info_dialog(
                         self.i18n.t('message_status'),
