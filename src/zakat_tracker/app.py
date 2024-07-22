@@ -38,6 +38,10 @@ class ZakatLedger(toga.App):
         self.os = toga.platform.current_platform.lower()
         self.datetime_supported = self.os in ['android', 'windows']
         self.android = self.os == 'android'
+        self.stats = {
+            'database': (0, 0),
+            'ram': (0, 0),
+        }
         print(f'platfom: {self.os} - datetime_supported: {self.datetime_supported}')
         print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
