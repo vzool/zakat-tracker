@@ -79,6 +79,7 @@ translations = {
     # data_management_page
     'reset_data': 'مسح قاعدة البيانات',
     'on_reset_database_message': 'هل ترغب بالفعل في مسح قاعدة البيانات؟',
+    'data_history': 'تاريخ البيانات',
     'show_data': 'عرض البيانات',
     'show_raw_data': 'عرض البيانات بشكل خام',
     'open_database_file': 'فتح ملف قاعدة البيانات',

@@ -79,6 +79,7 @@ translations = {
     # data_management_page
     'reset_data': 'Reset Database',
     'on_reset_database_message': 'Do you really want to clear the database?',
+    'data_history': 'Data History',
     'show_data': 'Show Data',
     'show_raw_data': 'Show Raw Data',
     'open_database_file': 'Open Database File',
