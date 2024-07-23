@@ -76,7 +76,6 @@ class ZakatLedger(toga.App):
             #----------------------------------
             ########### TASK THREAD ###########
             self.thread_done = False
-            self.thread_result = None
             self.thread_exception = None
             def thread():
                 try:
@@ -1560,7 +1559,7 @@ class ZakatLedger(toga.App):
 
     def transform_account_name(self, account: str) -> str:
         """
-        Extracts account name and balance from strings like "Sudan account (1655.000000)", returning a tuple.
+        Extracts account name and balance from strings like "Sudan (1655.000000)" or "Saudia (-1655.000000)", returning a tuple.
 
         Args:
             account (str): The account name string to transform.
@@ -1568,7 +1567,7 @@ class ZakatLedger(toga.App):
         Returns:
             tuple or None: A tuple (account, balance) if successful, or None if not.
         """
-        pattern = r'(\w+.*?)\s*\((\d+\.\d+)\)\s*'  # Updated pattern
+        pattern = r"^(\w+)\s*\(([-+]?\d+\.\d+)\)$"  # Updated pattern
         match = re.search(pattern, account)
 
         if match:
@@ -1895,12 +1894,15 @@ class ZakatLedger(toga.App):
         self.restore_button.enabled = len(self.history_table.data) > 0
 
     def update_history_details(self, widget):
+        self.history_details_table_data = None
         self.history_details_table.data = self.history_details_table_items(self.history_details_table_ref)
 
     def update_accounts(self, widget):
+        self.accounts_table_data = None
         self.accounts_table.data = self.accounts_table_items()
     
     def update_exchanges(self, widget, account):
+        self.exchanges_table_data = None
         self.exchanges_table.data = self.exchanges_table_items(account)
 
     def update_logs(self, widget, account):
