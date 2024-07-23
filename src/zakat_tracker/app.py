@@ -301,7 +301,7 @@ class ZakatLedger(toga.App):
         page.add(self.zakat_table)
 
         page.add(self.refresh_button)
-        return page
+        return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     def recover(self, widget):
         print('recover')
@@ -929,7 +929,7 @@ class ZakatLedger(toga.App):
         page.add(zakat_version_box)
         page.add(toga.Divider())
         page.add(app_version_box)
-        return toga.ScrollContainer(content=page, style=Pack(flex=1))
+        return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     @staticmethod
     def paginate(items: list, page_size: int, page_number: int) -> tuple[int, int, int]:
@@ -1046,7 +1046,7 @@ class ZakatLedger(toga.App):
         buttons_box.add(next_button)
         buttons_box.add(last_button)
         page.add(buttons_box)
-        return page
+        return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     def history_details_page(self, widget, ref):
         print('history_details_page', ref)
@@ -1258,7 +1258,7 @@ class ZakatLedger(toga.App):
         buttons_box.add(next_button)
         buttons_box.add(last_button)
         page.add(buttons_box)
-        return page
+        return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     def logs_page(self, widget, account):
         print('logs_page', account)
@@ -1330,7 +1330,7 @@ class ZakatLedger(toga.App):
         buttons_box.add(next_button)
         buttons_box.add(last_button)
         page.add(buttons_box)
-        return page
+        return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     def exchanges_page(self, widget, account):
         print('exchanges_page', account)
@@ -1410,7 +1410,7 @@ class ZakatLedger(toga.App):
         buttons_box.add(next_button)
         buttons_box.add(last_button)
         page.add(buttons_box)
-        return page
+        return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     # generators
 
