@@ -83,6 +83,7 @@ class ZakatLedger(toga.App):
                     if self.config_calculating_database_stats_on_startup:
                         self.stats = self.db.stats()
                 except Exception as e:
+                    print(e)
                     self.thread_exception = e
                 finally:
                     self.thread_done = True
@@ -90,7 +91,7 @@ class ZakatLedger(toga.App):
             ########### TASK THREAD ###########
             #----------------------------------
             ############ UI THREAD ############
-            while not self.thread_done:
+            while not self.thread_done and not self.thread_exception:
                 await asyncio.sleep(1)
             ############ UI THREAD ############
             #----------------------------------
@@ -583,6 +584,7 @@ class ZakatLedger(toga.App):
                         self.db.save()
                         print('result', self.thread_result)
                     except Exception as e:
+                        print(e)
                         self.thread_exception = e
                     finally:
                         self.thread_done = True
@@ -590,7 +592,7 @@ class ZakatLedger(toga.App):
                 ########### TASK THREAD ###########
                 #----------------------------------
                 ############ UI THREAD ############
-                while not self.thread_done:
+                while not self.thread_done and not self.thread_exception:
                     await asyncio.sleep(1)
                 ############ UI THREAD ############
                 #----------------------------------
@@ -648,6 +650,7 @@ class ZakatLedger(toga.App):
                         self.db.load(file_path)
                         self.db.save()
                     except Exception as e:
+                        print(e)
                         self.thread_exception = e
                     finally:
                         self.thread_done = True
@@ -655,7 +658,7 @@ class ZakatLedger(toga.App):
                 ########### TASK THREAD ###########
                 #----------------------------------
                 ############ UI THREAD ############
-                while not self.thread_done:
+                while not self.thread_done and not self.thread_exception:
                     await asyncio.sleep(1)
                 ############ UI THREAD ############
                 #----------------------------------
