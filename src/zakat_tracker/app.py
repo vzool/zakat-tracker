@@ -201,7 +201,7 @@ class ZakatLedger(toga.App):
             self.update_accounts(widget)
             self.zakat_plan = self.db.check(
                 silver_gram_price=self.config_silver_gram_price_in_local_currency,
-                nisab=ZakatTracker.Nisab(
+                unscaled_nisab=ZakatTracker.Nisab(
                     self.config_silver_gram_price_in_local_currency,
                     self.config_silver_nisab_gram_quantity,
                 ),
@@ -220,9 +220,9 @@ class ZakatLedger(toga.App):
                         ZakatTracker.time_to_datetime(y['box_time']),
                         y['box_log'],
                         account,
-                        format_number(y['box_capital']),
-                        format_number(y['box_rest']),
-                        format_number(y['total']),
+                        format_number(ZakatTracker.unscale(y['box_capital'])),
+                        format_number(ZakatTracker.unscale(y['box_rest'])),
+                        format_number(ZakatTracker.unscale(y['total'])),
                         format_number(y['count']),
                         format_number(y['exchange_rate']),
                         ZakatTracker.time_to_datetime(y['exchange_time']),
@@ -233,11 +233,11 @@ class ZakatLedger(toga.App):
             
             if exists:
                 if hasattr(self, 'pay_button'):
-                    self.pay_button.text = self.i18n.t('pay') + f' {format_number(total)}'
+                    self.pay_button.text = self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(total))}'
                 else:
                     page.clear()
                     self.pay_button = toga.Button(
-                        self.i18n.t('pay') + f' {format_number(total)}',
+                        self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(total))}',
                         on_press=self.payment_parts_form,
                         style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
                     )
@@ -252,8 +252,8 @@ class ZakatLedger(toga.App):
                     self.zakat_table.data = data
                     page.add(self.refresh_button)
             else:
-                zakat_str = format_number(round(total, 2))
-                total_str = format_number(round(stats[1], 2))
+                zakat_str = format_number(round(ZakatTracker.unscale(total), 2))
+                total_str = format_number(round(ZakatTracker.unscale(stats[1]), 2))
                 nisab_str = format_number(round(self.nisab, 2))
                 self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
                 if self.zakat_has_just_calculated:
@@ -1465,7 +1465,7 @@ class ZakatLedger(toga.App):
         if self.accounts_table_data is None:
             self.accounts_table_data = [(
                 k,
-                format_number(v),
+                format_number(ZakatTracker.unscale(v)),
                 self.db.box_size(k),
                 self.db.log_size(k),
                 self.i18n.t('yes') if self.db.hide(k) else self.i18n.t('no'),
@@ -1488,11 +1488,11 @@ class ZakatLedger(toga.App):
         if self.boxes_table_data is None:
             self.boxes_table_data = [(
                 ZakatTracker.time_to_datetime(k),
-                format_number(v['rest']),
-                format_number(v['capital']),
+                format_number(ZakatTracker.unscale(v['rest'])),
+                format_number(ZakatTracker.unscale(v['capital'])),
                 format_number(v['count']),
                 ZakatTracker.time_to_datetime(v['last']) if v['last'] else '-',
-                format_number(v['total']),
+                format_number(ZakatTracker.unscale(v['total'])),
             ) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
         chunk, self.boxes_table_total_pages, self.boxes_table_total_items = self.paginate(
             self.boxes_table_data,
@@ -1511,7 +1511,7 @@ class ZakatLedger(toga.App):
         if self.logs_table_data is None:
             self.logs_table_data = [(
                 ZakatTracker.time_to_datetime(k),
-                format_number(v['value']),
+                format_number(ZakatTracker.unscale(v['value'])),
                 v['desc'],
             ) for k,v in sorted(self.db.logs(account).items(), reverse=True)]
         chunk, self.logs_table_total_pages, self.logs_table_total_items = self.paginate(
@@ -1647,7 +1647,7 @@ class ZakatLedger(toga.App):
         print('brief', brief)
         _, _, self.demand = brief
         print('demand', self.demand)
-        self.demand = round(self.demand, 2)
+        self.demand = round(ZakatTracker.unscale(self.demand), 2)
         print('demand', self.demand)
         self.payment_parts_widgets = {}
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -1670,8 +1670,8 @@ class ZakatLedger(toga.App):
                     for part in self.zakat_plan[2][account].values():
                         if self.debug:
                             print('part', part)
-                        progress_bar.value = float(progress_bar.value) + part['total']
-                        number_input.value = float(number_input.value) + part['total']
+                        progress_bar.value = float(progress_bar.value) + ZakatTracker.unscale(part['total'])
+                        number_input.value = float(number_input.value) + ZakatTracker.unscale(part['total'])
             self.apply_payment_parts_button.enabled = widget.value
             if widget.value:
                 self.supply = self.demand
@@ -1700,7 +1700,7 @@ class ZakatLedger(toga.App):
         for account, part in self.payment_parts['account'].items():
             if self.debug:
                 print(account, part)
-            parts_box.add(self.payment_part_row_widget(widget, account, part['balance'], part['rate']))
+            parts_box.add(self.payment_part_row_widget(widget, account, ZakatTracker.unscale(part['balance']), part['rate']))
             parts_box.add(toga.Divider())
         page.add(toga.ScrollContainer(content=parts_box, style=Pack(flex=1, text_direction=self.dir)))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
