@@ -44,7 +44,7 @@ macOS:
 	mkdir -p dist
 	briefcase create macos
 	briefcase update macos --update-resources
-	briefcase build macos
+	briefcase build macos --update-resources
 	cp -r build/zakat-tracker/macos/app/متتبع\ الزكاة\ \(Zakat\ Tracker\).app dist/
 
 # show help

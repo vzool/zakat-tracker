@@ -147,6 +147,7 @@ class ZakatLedger(toga.App):
         self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
         self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 355)
         self.config_calculating_database_stats_on_startup = self.config.get('calculating_database_stats_on_startup', True)
+        self.config_create_database_file_snapshot_before_any_recovery = self.config.get('create_database_file_snapshot_before_any_recovery', True)
 
         self.nisab = self.config_silver_gram_price_in_local_currency * self.config_silver_nisab_gram_quantity
 
@@ -312,8 +313,12 @@ class ZakatLedger(toga.App):
                 return
             print('confirmed')
             self.db.free(self.db.lock())
+            if self.config_create_database_file_snapshot_before_any_recovery:
+                self.db.snapshot()
             if self.db.recall(dry=False, debug=self.debug):
                 self.db.save()
+                self.history_table_data = None
+                self.update_history(widget)
                 self.refresh(widget)
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
@@ -541,6 +546,17 @@ class ZakatLedger(toga.App):
         reset_data_button = toga.Button(self.i18n.t('reset_data'), on_press=reset_database, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         show_data_button = toga.Button(self.i18n.t('show_data'), on_press=self.show_data_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         file_server_button = toga.Button(self.i18n.t('file_server'), on_press=self.file_server_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
+        # create database file snapshot before any recovery
+        def create_database_file_snapshot_before_any_recovery(status):
+                self.config_create_database_file_snapshot_before_any_recovery = status
+                self.config.set('create_database_file_snapshot_before_any_recovery', status)
+        create_database_file_snapshot_before_any_recovery_switch = toga.Switch(
+            self.i18n.t('create_database_file_snapshot_before_any_recovery'),
+            value=self.config_create_database_file_snapshot_before_any_recovery,
+            on_change=lambda e: create_database_file_snapshot_before_any_recovery(e.value),
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
         data_history_button = toga.Button(self.i18n.t('data_history'), on_press=self.history_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         async def import_csv_file(widget):
@@ -796,6 +812,8 @@ class ZakatLedger(toga.App):
         page.add(export_database_file_button)
         page.add(toga.Divider())
         page.add(file_server_button)
+        page.add(toga.Divider())
+        page.add(create_database_file_snapshot_before_any_recovery_switch)
         page.add(toga.Divider())
         page.add(data_history_button)
         page.add(toga.Divider())
