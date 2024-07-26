@@ -21,6 +21,8 @@ test_sources = [
 ]
 
 requires = [
+    "pyyaml", # required by camelx
+    "camelx", # required by zakat
     "zakat",
 ]
 test_requires = [

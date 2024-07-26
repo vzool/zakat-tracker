@@ -46,6 +46,10 @@ class ZakatLedger(toga.App):
         print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
 
+        self.db_path = os.path.join(self.paths.data, 'zakat.camel')
+        print(f'db: {self.db_path}')
+        self.db = ZakatTracker(self.db_path)
+
         self.load_config()
         self.load_translations()
 
@@ -79,7 +83,7 @@ class ZakatLedger(toga.App):
             self.thread_exception = None
             def thread():
                 try:
-                    self.load_db()
+                    self.db.load()
                     if self.config_calculating_database_stats_on_startup:
                         self.stats = self.db.stats()
                 except Exception as e:
@@ -129,11 +133,6 @@ class ZakatLedger(toga.App):
             self.main_window.title = self._original_title
 
     # loaders
-
-    def load_db(self):
-        self.db_path = os.path.join(self.paths.data, 'zakat.pickle')
-        print(f'db: {self.db_path}')
-        self.db = ZakatTracker(self.db_path)
 
     def load_config(self):
         if not os.path.exists(self.paths.config):
