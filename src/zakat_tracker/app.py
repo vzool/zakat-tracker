@@ -46,7 +46,7 @@ class ZakatLedger(toga.App):
         print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
 
-        self.db_path = os.path.join(self.paths.data, 'zakat.camel')
+        self.db_path = os.path.join(self.paths.data, 'zakat_db', 'zakat.camel')
         print(f'db: {self.db_path}')
         self.db = ZakatTracker(self.db_path)
 
