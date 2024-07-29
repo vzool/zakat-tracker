@@ -105,6 +105,7 @@ translations = {
     'silver_nisab_gram_quantity': 'The number of grams needed to reach the Nisab',
     'haul_time_cycle_in_days': 'Number of days in a year',
     'zakat_library_version': 'Zakat Library Version',
+    'gui_version': 'Graphical User Interface (GUI) Library Version',
     'app_version': 'Application Version',
     
     # accounts_page

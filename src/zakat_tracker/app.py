@@ -925,6 +925,13 @@ class ZakatLedger(toga.App):
         zakat_version_box.add(zakat_version_label)
         zakat_version_box.add(zakat_version_value)
         
+        # gui_version
+        gui_version_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
+        gui_version_label = toga.Label(self.i18n.t('gui_version'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        gui_version_value = toga.Label('toga {}'.format(toga.__version__), style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        gui_version_box.add(gui_version_label)
+        gui_version_box.add(gui_version_value)
+        
         # app_version
         app_version_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
         app_version_label = toga.Label(self.i18n.t('app_version'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -945,6 +952,8 @@ class ZakatLedger(toga.App):
         page.add(silver_nisab_gram_quantity_box)
         page.add(toga.Divider())
         page.add(haul_time_cycle_box)
+        page.add(toga.Divider())
+        page.add(gui_version_box)
         page.add(toga.Divider())
         page.add(zakat_version_box)
         page.add(toga.Divider())
