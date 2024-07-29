@@ -95,7 +95,7 @@ class ZakatLedger(toga.App):
             ########### TASK THREAD ###########
             #----------------------------------
             ############ UI THREAD ############
-            while not self.thread_done and not self.thread_exception:
+            while not self.thread_done and self.thread_exception is None:
                 await asyncio.sleep(1)
             ############ UI THREAD ############
             #----------------------------------
@@ -514,6 +514,44 @@ class ZakatLedger(toga.App):
         self.add_background_task(timer)
         return page
 
+    def csv_bad_records_report_page(self, report):
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        page_label = toga.Label(
+            self.i18n.t('csv_bad_records_report_page_title'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
+        if self.debug:
+            print('report', report)
+        headings=[
+            self.i18n.t('sn'),
+            self.i18n.t('account'),
+            self.i18n.t('desc'),
+            self.i18n.t('value'),
+            self.i18n.t('date'),
+            self.i18n.t('rate'),
+            self.i18n.t('details'),
+        ]
+        table = toga.Table(
+            headings=headings,
+            missing_value="-",
+            data=[[k]+v for k, v in report[2].items()],
+            on_activate=lambda e, row: self.main_window.info_dialog(
+                self.i18n.t('row_details'),
+                self.row_details_str(headings, row),
+            ),
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
+        )
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_data_management_page, style=Pack(flex=1, text_direction=self.dir))
+        page.add(page_label)
+        page.add(toga.Divider())
+        page.add(self.label_note_widget(self.i18n.t('csv_bad_records_report_note_1')))
+        page.add(self.label_note_widget(self.i18n.t('csv_bad_records_report_note_2')))
+        page.add(toga.Divider())
+        page.add(table)
+        page.add(toga.Divider())
+        page.add(back_button)
+        self.main_window.content = page
+
     def data_management_page(self, widget):
         print('data_management_page')
         if self.debug_loading_page:
@@ -588,7 +626,7 @@ class ZakatLedger(toga.App):
                 #----------------------------------
                 ########### TASK THREAD ###########
                 self.thread_done = False
-                self.thread_result = None
+                self.thread_result = [0, 0, {}]
                 self.thread_exception = None
                 def thread():
                     try:
@@ -597,7 +635,6 @@ class ZakatLedger(toga.App):
                         self.db.snapshot()
                         self.thread_result = self.db.import_csv(file_path)
                         self.db.save()
-                        print('result', self.thread_result)
                     except Exception as e:
                         print(e)
                         self.thread_exception = e
@@ -607,21 +644,25 @@ class ZakatLedger(toga.App):
                 ########### TASK THREAD ###########
                 #----------------------------------
                 ############ UI THREAD ############
-                while not self.thread_done and not self.thread_exception:
+                while not self.thread_done and self.thread_exception is None:
                     await asyncio.sleep(1)
                 ############ UI THREAD ############
                 #----------------------------------
-                if self.thread_exception:
+                _, _, bad = self.thread_result
+                if self.thread_exception is None and not bad:
+                    self.refresh(widget)
+                    self.main_window.info_dialog(
+                        self.i18n.t('message_status'),
+                        self.i18n.t('operation_accomplished_successfully') + '\n' + self.coloned_time,
+                    )
+                else:
                     self.main_window.error_dialog(
-                        self.i18n.t('unexpected_error'),
+                    self.i18n.t('unexpected_error'),
                         str(self.thread_exception) + '\n' + self.coloned_time,
                     )
-                    return
-                self.refresh(widget)
-                self.main_window.info_dialog(
-                    self.i18n.t('message_status'),
-                    self.i18n.t('operation_accomplished_successfully') + '\n' + self.coloned_time,
-                )
+                    if self.thread_result:
+                        self.csv_bad_records_report_page(self.thread_result)
+                        return
                 self.goto_main_data_management_page(widget)
             self.add_background_task(import_csv_task)
         import_csv_file_button = toga.Button(self.i18n.t('import_csv_file'), on_press=import_csv_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -673,10 +714,11 @@ class ZakatLedger(toga.App):
                 ########### TASK THREAD ###########
                 #----------------------------------
                 ############ UI THREAD ############
-                while not self.thread_done and not self.thread_exception:
+                while not self.thread_done and self.thread_exception is None:
                     await asyncio.sleep(1)
                 ############ UI THREAD ############
                 #----------------------------------
+                self.goto_main_data_management_page(widget)
                 if self.thread_exception:
                     self.main_window.error_dialog(
                         self.i18n.t('unexpected_error'),
@@ -688,7 +730,6 @@ class ZakatLedger(toga.App):
                     self.i18n.t('message_status'),
                     self.i18n.t('operation_accomplished_successfully') + '\n' + self.coloned_time,
                 )
-                self.goto_main_data_management_page(widget)
             self.add_background_task(import_database_task)
         import_database_file_button = toga.Button(self.i18n.t('import_database_file'), on_press=import_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 

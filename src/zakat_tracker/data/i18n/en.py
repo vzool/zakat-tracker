@@ -76,6 +76,12 @@ translations = {
     # loading_page
     'loading': 'Loading',
 
+    # csv_bad_records_report_page
+    'csv_bad_records_report_page_title': 'Report Invalid Imported Records',
+    'csv_bad_records_report_note_1': 'Records are arranged from oldest to newest, if an error occurs the process stops immediately',
+    'csv_bad_records_report_note_2': 'All data before the error has been entered, because the present depends on the past',
+    'details': 'Details',
+
     # data_management_page
     'reset_data': 'Reset Database',
     'on_reset_database_message': 'Do you really want to clear the database?',
