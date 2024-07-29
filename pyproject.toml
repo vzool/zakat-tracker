@@ -11,6 +11,7 @@ author_email = "aeemh.sdn@gmail.com"
 [tool.briefcase.app.zakat-tracker]
 formal_name = "متتبع الزكاة (Zakat Tracker)"
 icon = "icons/zakat_tracker"
+splash_background_color = "#FFFFFF"
 description = "Personal Accounting Software using Zakat way for all transactions from the beginning to the end"
 long_description = """More details about the app should go here.
 """
