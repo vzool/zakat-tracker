@@ -2040,24 +2040,19 @@ class ZakatLedger(toga.App):
         print('exchange', account)
         rate = self.rate_input.value
         desc = self.desc_input.value
-        year = int(self.year_input.value)
-        month = int(self.month_input.value)
-        day = int(self.day_input.value)
-        hour = int(self.hour_input.value)
-        minute = int(self.minute_input.value)
-        second = int(self.second_input.value)
-        datetime_value = datetime(year, month, day, hour, minute, second)
+        datetime_value, datetime_missing = self.datetime_value()
         print(f'rate: {rate}')
         print(f'desc: {desc}')
-        print(f'datetime: {datetime_value}')
-        if not rate or not desc or not year or not month or not day:
+        print(f'datetime_missing: {datetime_missing}')
+        print(f'datetime_value: {datetime_value}')
+        if not rate or not desc or datetime_missing:
             self.main_window.error_dialog(
                 self.i18n.t('data_error'),
                 self.i18n.t('all_fields_required_message'),
             )
             return
         try:
-            self.db.exchange(account, created=ZakatTracker.time(datetime_value), rate=rate, description=desc, debug=self.debug)
+            self.db.exchange(account, created=ZakatTracker.time(datetime_value), rate=float(rate), description=desc, debug=self.debug)
             self.update_exchanges(widget, account)
             self.db.save()
             self.main_window.content = self.account_tabs
