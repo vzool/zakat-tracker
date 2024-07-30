@@ -52,8 +52,9 @@ macOS:
 	briefcase update macos --update-resources
 	briefcase build macos --update-resources
 	git checkout pyproject.toml
-	cp -r build/zakat-tracker/macos/app/متتبع\ الزكاة\ \(Zakat\ Tracker\).app dist/
-	bash version-build.sh dist/متتبع\ الزكاة\ \(Zakat\ Tracker\).app
+	cp -r build/zakat-tracker/macos/app/ZakatTracker-متتبع-الزكاة.app dist/
+	bash version-build.sh dist/ZakatTracker-متتبع-الزكاة.app
+	briefcase package --adhoc-sign
 
 # show help
 help:
