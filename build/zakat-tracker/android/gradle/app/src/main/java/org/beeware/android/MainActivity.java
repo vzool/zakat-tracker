@@ -33,16 +33,16 @@ public class MainActivity extends AppCompatActivity {
         if (doubleBackToExitPressedOnce) {
             // super.onBackPressed(); // Exit the app
             new AlertDialog.Builder(this)
-                .setTitle("تأكيد الخروج (Exit Confirmation)")
-                .setMessage("هل أنت متأكد أنك تريد الخروج من التطبيق؟")
-                .setPositiveButton("نعم (Yes)", (dialog, which) -> finish())
-                .setNegativeButton("لا (No)", null)
+                .setTitle(R.string.exit_confirmation_title)
+                .setMessage(R.string.exit_confirmation_message)
+                .setPositiveButton(R.string.yes, (dialog, which) -> finish())
+                .setNegativeButton(R.string.no, null)
                 .show();
             return;
         }
 
         this.doubleBackToExitPressedOnce = true;
-        Toast.makeText(this, "اضغط مرة أخرى للخروج - Press back again to exit", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.press_back_again_to_exit, Toast.LENGTH_SHORT).show();
 
         new Handler().postDelayed(() -> doubleBackToExitPressedOnce = false, 2000); // Reset after 2 seconds
     }
