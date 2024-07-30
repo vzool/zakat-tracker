@@ -14,6 +14,8 @@ run:
 update:
 	python -m pip install --upgrade briefcase
 	python -m pip install --upgrade zakat
+	python -m pip install --upgrade toml
+	python -m pip install --upgrade pip
 	briefcase create
 	briefcase update -r
 
