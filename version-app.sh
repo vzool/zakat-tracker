@@ -22,6 +22,6 @@ commit_count=$(git rev-list --count HEAD)
 commit=$(git rev-parse --short HEAD)
 
 # Construct new filename
-full_version="v${version}.${commit_count}-${commit}"
+full_version="${version}.${commit_count}" # .${commit}
 
-echo "$full_version"
+awk -v version="$version" -v full_version="$full_version" '/^version = / { $0 = "version = \"" full_version "\"" } 1' pyproject.toml > tmp && mv tmp pyproject.toml

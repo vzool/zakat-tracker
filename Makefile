@@ -24,6 +24,7 @@ update:
 android:
 	rm -rf build/zakat-tracker/android
 	mkdir -p dist
+	bash version-app.sh
 	briefcase create android
 	git stash push -m "deploy"
 	git checkout main
@@ -37,19 +38,22 @@ android:
 	briefcase update android --update-resources
 	briefcase update android -r
 	briefcase build android
+	git checkout pyproject.toml
 	cp build/zakat-tracker/android/gradle/app/build/outputs/apk/debug/app-debug.apk dist/zakat-tracker.apk
-	bash version.sh dist/zakat-tracker.apk
+	bash version-build.sh dist/zakat-tracker.apk
 
 .PHONY: macOS
 # deploy macOS
 macOS:
 	rm -rf build/zakat-tracker/macos
 	mkdir -p dist
+	bash version-app.sh
 	briefcase create macos
 	briefcase update macos --update-resources
 	briefcase build macos --update-resources
+	git checkout pyproject.toml
 	cp -r build/zakat-tracker/macos/app/متتبع\ الزكاة\ \(Zakat\ Tracker\).app dist/
-	bash version.sh dist/متتبع\ الزكاة\ \(Zakat\ Tracker\).app
+	bash version-build.sh dist/متتبع\ الزكاة\ \(Zakat\ Tracker\).app
 
 # show help
 help:

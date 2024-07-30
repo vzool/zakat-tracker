@@ -8,7 +8,7 @@ fi
 
 filename="$1"
 
-if [[ ! -f "$filename" ]]; then
+if [[ ! -e "$filename" ]]; then
     echo "Error: File '$filename' not exists"
     exit 1
 fi
