@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="formal_name">متتبع الزكاة</string>
+    <string name="app_name">zakat-tracker</string>
+    <string name="main_module">zakat_tracker</string>
+</resources>
