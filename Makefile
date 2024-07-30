@@ -24,10 +24,10 @@ update:
 android:
 	rm -rf build/zakat-tracker/android
 	mkdir -p dist
-	bash version-app.sh
 	briefcase create android
 	git stash push -m "deploy"
 	git checkout main
+	bash version-app.sh
 	cp -r publish/android/ build/zakat-tracker/android/gradle/app/src/main/res/
 	cp publish/bundle/android/drawable-xxxhdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-xxxhdpi/splash.png
 	cp publish/bundle/android/drawable-xxhdpi/screen.png build/zakat-tracker/android/gradle/app/src/main/res/mipmap-xxhdpi/splash.png
