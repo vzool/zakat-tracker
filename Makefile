@@ -20,7 +20,7 @@ update:
 .PHONY: android
 # deploy android
 android:
-	make clean
+	rm -rf build/zakat-tracker/android
 	mkdir -p dist
 	briefcase create android
 	git stash push -m "deploy"
@@ -36,16 +36,18 @@ android:
 	briefcase update android -r
 	briefcase build android
 	cp build/zakat-tracker/android/gradle/app/build/outputs/apk/debug/app-debug.apk dist/zakat-tracker.apk
+	bash version.sh dist/zakat-tracker.apk
 
 .PHONY: macOS
 # deploy macOS
 macOS:
-	make clean
+	rm -rf build/zakat-tracker/macos
 	mkdir -p dist
 	briefcase create macos
 	briefcase update macos --update-resources
 	briefcase build macos --update-resources
 	cp -r build/zakat-tracker/macos/app/متتبع\ الزكاة\ \(Zakat\ Tracker\).app dist/
+	bash version.sh dist/متتبع\ الزكاة\ \(Zakat\ Tracker\).app
 
 # show help
 help:
