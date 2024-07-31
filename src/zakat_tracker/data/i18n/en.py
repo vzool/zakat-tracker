@@ -82,11 +82,14 @@ translations = {
     'csv_bad_records_report_note_2': 'All data before the error has been entered, because the present depends on the past',
     'details': 'Details',
 
-    # import_csv_scale_selection_page
+    # import_csv_file_scale_selection_page
     'import': 'Import',
     'import_csv_file_scale_selection_page_label': 'Numbers Scale Form',
-    'import_csv_file_scale_description': 'Computers face challenges in accurately handling the decimal point in storage\n and retrieval because their architecture is not fully compatible with it,\nso some software stores numbers in an enlarged way to try to solve this problem,\nfor example, 1.23 when enlarged twice becomes 123\n or enlarged to a million or enlarged 6 times and 1.23 becomes stored as 1230000',
+    'import_csv_file_scale_selection_page_note': 'Zero means that the imported values ​​are normal and not scaled',
+    'import_csv_file_scale_description': 'Computers face challenges in accurately handling the decimal point in storage and retrieval because their architecture is not fully compatible with it, so some software stores numbers in an enlarged way to try to solve this problem, for example, 1.23 when enlarged twice becomes 123 or enlarged to a million or enlarged 6 times and 1.23 becomes stored as 1230000',
     'scale_factor_for_values': 'The scale factor for financial values',
+    'on_import_csv_with_selected_scale_title': 'Import Confirmation',
+    'on_import_csv_with_selected_scale_message': 'Would you like to import data from a source with a scale of {}?',
 
     # data_management_page
     'reset_data': 'Reset Database',

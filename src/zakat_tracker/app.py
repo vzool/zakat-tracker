@@ -571,7 +571,7 @@ class ZakatLedger(toga.App):
                     self.db.snapshot()
                     self.thread_result = self.db.import_csv(
                         path=self.csv_file_path,
-                        scale_decimal_places=int(self.scale),
+                        scale_decimal_places=int(self.selected_scale),
                     )
                     self.db.save()
                 except Exception as e:
@@ -605,16 +605,25 @@ class ZakatLedger(toga.App):
             self.goto_main_data_management_page(widget)
         async def import_csv_file(widget):
             print('import_csv_file')
-            self.scale = self.scale_factor_for_values_input.value
-            print(f'scale: {self.scale}')
-            if self.scale is None:
+            self.selected_scale = self.scale_factor_for_values_input.value
+            print(f'scale: {self.selected_scale}')
+            if self.selected_scale is None:
                 self.main_window.error_dialog(
                     self.i18n.t('data_error'),
                     self.i18n.t('all_fields_required_message'),
                 )
                 return
-            self.main_window.content = self.loading_page(widget)
-            self.add_background_task(import_csv_task)
+            def on_result(window, confirmed):
+                if not confirmed:
+                    print('cancelled')
+                    return
+                self.main_window.content = self.loading_page(widget)
+                self.add_background_task(import_csv_task)
+            self.main_window.confirm_dialog(
+                self.i18n.t('on_import_csv_with_selected_scale_title'),
+                self.i18n.t('on_import_csv_with_selected_scale_message').format(self.selected_scale),
+                on_result=on_result,
+            )
         import_button = toga.Button(
             self.i18n.t('import'),
             on_press=import_csv_file,
@@ -630,6 +639,9 @@ class ZakatLedger(toga.App):
         page.add(form_label)
         page.add(toga.Divider())
         page.add(import_button)
+        page.add(toga.Divider())
+        page.add(self.label_note_widget(self.i18n.t('import_csv_file_scale_selection_page_note')))
+        page.add(toga.Divider())
         page.add(toga.Box(children=[
             toga.Box(style=Pack(background_color="#CCCCCC", width=33, flex=1, alignment='center')),
             toga.ImageView("resources/background/decimal-left.png", style=Pack(width=333, flex=1, alignment='center')),
@@ -641,7 +653,12 @@ class ZakatLedger(toga.App):
         page.add(scale_factor_for_values_label)
         page.add(self.scale_factor_for_values_input)
         page.add(toga.Divider())
-        page.add(self.label_note_widget(self.i18n.t('import_csv_file_scale_description')))
+        page.add(toga.MultilineTextInput(
+            value=self.i18n.t('import_csv_file_scale_description'),
+            readonly=True,
+            style=Pack(flex=1, text_direction=self.dir),
+        ))
+        
         page.add(toga.Divider())
         page.add(back_button)
         return page
