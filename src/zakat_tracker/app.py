@@ -557,7 +557,19 @@ class ZakatLedger(toga.App):
     def import_csv_file_scale_selection_page(self, widget):
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         form_label = toga.Label(self.i18n.t('import_csv_file_scale_selection_page_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_data_management_page, style=Pack(flex=1, text_direction=self.dir))
+        def back(widget):
+            def on_result(window, confirmed):
+                if not confirmed:
+                    print('cancelled')
+                    return
+                print('confirmed')
+                self.goto_main_data_management_page(widget)
+            self.main_window.confirm_dialog(
+                self.i18n.t('on_cancel_import_csv_title'),
+                self.i18n.t('on_cancel_import_csv_message'),
+                on_result=on_result,
+            )
+        back_button = toga.Button(self.i18n.t('back'), on_press=back, style=Pack(flex=1, text_direction=self.dir))
         async def import_csv_task(widget, **kwargs):
             #----------------------------------
             ########### TASK THREAD ###########
@@ -617,6 +629,7 @@ class ZakatLedger(toga.App):
                 if not confirmed:
                     print('cancelled')
                     return
+                print('confirmed')
                 self.main_window.content = self.loading_page(widget)
                 self.add_background_task(import_csv_task)
             self.main_window.confirm_dialog(

@@ -90,6 +90,8 @@ translations = {
     'scale_factor_for_values': 'The scale factor for financial values',
     'on_import_csv_with_selected_scale_title': 'Import Confirmation',
     'on_import_csv_with_selected_scale_message': 'Would you like to import data from a source with a scale of {}?',
+    'on_cancel_import_csv_title': 'Cancel Import Process',
+    'on_cancel_import_csv_message': 'Would you like to cancel the data import process?',
 
     # data_management_page
     'reset_data': 'Reset Database',

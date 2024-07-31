@@ -90,6 +90,8 @@ translations = {
     'scale_factor_for_values': 'معامل التكبير للقيم المالية',
     'on_import_csv_with_selected_scale_title': 'تأكيد عملية الاستيراد',
     'on_import_csv_with_selected_scale_message': 'هل ترغب بالفعل في استيراد البيانات من مصدر بحجم تكبير {}؟',
+    'on_cancel_import_csv_title': 'إلغاء عملية الاستيراد',
+    'on_cancel_import_csv_message': 'هل ترغب بالفعل في إلغاء عملية استيراد البيانات؟',
 
     # data_management_page
     'reset_data': 'مسح قاعدة البيانات',
