@@ -77,10 +77,16 @@ translations = {
     'loading': 'جاري التحميل',
 
     # csv_bad_records_report_page
-    'csv_bad_records_report_page_title': 'تقرير السجلات المستوردة الغير صحيحة',
+    'csv_bad_records_report_page_title': 'فشل {} سجل في عملية الاستيراد وتم إنشاء {} و{} مستوردة من قبل',
     'csv_bad_records_report_note_1': 'تترتب السجلات من القديم إلى الجديد، إذا حدث خطأ فإن العملية تتوقف مباشرة',
     'csv_bad_records_report_note_2': 'كل البيانات قبل الخطأ تم إدخالها، وذلك بسبب أن الحاضر معتمد على الماضي',
     'details': 'التفاصيل',
+
+    # import_csv_scale_selection_page
+    'import': 'استيراد',
+    'import_csv_file_scale_selection_page_label': 'نموذج مقياس الأرقام',
+    'import_csv_file_scale_description': 'تواجه الحواسيب تحديات في التعامل بدقة مع الفاصلة العشرية في التخزين والاسترجاع \nبسبب أن المعمارية الخاصة بها ليست متوافقة معها بالكامل،\nلذلك بعض البرمجيات تقوم بتخزين الأرقام بطريقة مكبرة حتى تحاول حل هذه المشكلة،\nمثلا 1.23 يتم تكبير مرتين ويصبح كالتالي 123 أو التكبير إلى مليون أو مكبر 6 مرات فيصبح 1.23 مخزن كالتالي 1230000',
+    'scale_factor_for_values': 'معامل التكبير للقيم المالية',
 
     # data_management_page
     'reset_data': 'مسح قاعدة البيانات',

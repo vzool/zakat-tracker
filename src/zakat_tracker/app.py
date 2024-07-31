@@ -516,8 +516,10 @@ class ZakatLedger(toga.App):
 
     def csv_bad_records_report_page(self, report):
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        created, found, bad = report
+        data = [[k]+v for k, v in bad.items()]
         page_label = toga.Label(
-            self.i18n.t('csv_bad_records_report_page_title'),
+            self.i18n.t('csv_bad_records_report_page_title').format(len(data), created, found),
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
         )
         if self.debug:
@@ -534,7 +536,7 @@ class ZakatLedger(toga.App):
         table = toga.Table(
             headings=headings,
             missing_value="-",
-            data=[[k]+v for k, v in report[2].items()],
+            data=data,
             on_activate=lambda e, row: self.main_window.info_dialog(
                 self.i18n.t('row_details'),
                 self.row_details_str(headings, row),
@@ -551,6 +553,98 @@ class ZakatLedger(toga.App):
         page.add(toga.Divider())
         page.add(back_button)
         self.main_window.content = page
+
+    def import_csv_file_scale_selection_page(self, widget):
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        form_label = toga.Label(self.i18n.t('import_csv_file_scale_selection_page_label'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_data_management_page, style=Pack(flex=1, text_direction=self.dir))
+        async def import_csv_task(widget, **kwargs):
+            #----------------------------------
+            ########### TASK THREAD ###########
+            self.thread_done = False
+            self.thread_result = [0, 0, {}]
+            self.thread_exception = None
+            def thread():
+                try:
+                    self.db.save()
+                    self.db.lock()
+                    self.db.snapshot()
+                    self.thread_result = self.db.import_csv(
+                        path=self.csv_file_path,
+                        scale_decimal_places=int(self.scale),
+                    )
+                    self.db.save()
+                except Exception as e:
+                    print(e)
+                    self.thread_exception = e
+                finally:
+                    self.thread_done = True
+            threading.Thread(target=thread).start()
+            ########### TASK THREAD ###########
+            #----------------------------------
+            ############ UI THREAD ############
+            while not self.thread_done and self.thread_exception is None:
+                await asyncio.sleep(1)
+            ############ UI THREAD ############
+            #----------------------------------
+            _, _, bad = self.thread_result
+            if self.thread_exception is None and not bad:
+                self.refresh(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('operation_accomplished_successfully') + '\n' + self.coloned_time,
+                )
+            else:
+                self.main_window.error_dialog(
+                self.i18n.t('unexpected_error'),
+                    str(self.thread_exception) + '\n' + self.coloned_time,
+                )
+                if self.thread_result:
+                    self.csv_bad_records_report_page(self.thread_result)
+                    return
+            self.goto_main_data_management_page(widget)
+        async def import_csv_file(widget):
+            print('import_csv_file')
+            self.scale = self.scale_factor_for_values_input.value
+            print(f'scale: {self.scale}')
+            if self.scale is None:
+                self.main_window.error_dialog(
+                    self.i18n.t('data_error'),
+                    self.i18n.t('all_fields_required_message'),
+                )
+                return
+            self.main_window.content = self.loading_page(widget)
+            self.add_background_task(import_csv_task)
+        import_button = toga.Button(
+            self.i18n.t('import'),
+            on_press=import_csv_file,
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+        scale_factor_for_values_label = toga.Label(self.i18n.t('scale_factor_for_values'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.scale_factor_for_values_input = toga.NumberInput(
+            min=0,
+            max=18,
+            step=1,
+            style=Pack(flex=1, text_direction=self.dir, text_align='center'),
+        )
+        page.add(form_label)
+        page.add(toga.Divider())
+        page.add(import_button)
+        page.add(toga.Box(children=[
+            toga.Box(style=Pack(background_color="#CCCCCC", width=33, flex=1, alignment='center')),
+            toga.ImageView("resources/background/decimal-left.png", style=Pack(width=333, flex=1, alignment='center')),
+            toga.Box(style=Pack(background_color="#CCCCCC", width=33, flex=1, alignment='center')),
+            toga.ImageView("resources/background/decimal-right.png", style=Pack(width=333, flex=1, alignment='center')),
+            toga.Box(style=Pack(background_color="#CCCCCC", width=33, flex=1, alignment='center')),
+        ], style=Pack(direction=ROW, flex=1, text_direction=self.dir, background_color="#FFFFFF", alignment='center')))
+        page.add(toga.Divider())
+        page.add(scale_factor_for_values_label)
+        page.add(self.scale_factor_for_values_input)
+        page.add(toga.Divider())
+        page.add(self.label_note_widget(self.i18n.t('import_csv_file_scale_description')))
+        page.add(toga.Divider())
+        page.add(back_button)
+        return page
 
     def data_management_page(self, widget):
         print('data_management_page')
@@ -596,8 +690,8 @@ class ZakatLedger(toga.App):
         )
         data_history_button = toga.Button(self.i18n.t('data_history'), on_press=self.history_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
-        async def import_csv_file(widget):
-            print('import_csv_file')
+        async def select_csv_file(widget):
+            print('select_csv_file')
             if self.android:
                 from android.content import Intent
 
@@ -609,63 +703,22 @@ class ZakatLedger(toga.App):
                 data = results['resultData'].getData()
                 context = self._impl.native
                 bytes_data = bytes((context.getContentResolver().openInputStream(data).readAllBytes()))
-                file_path = os.path.join(self.paths.cache, 'import.csv')
-                with open(file_path, "wb") as file:
+                self.csv_file_path = os.path.join(self.paths.cache, 'import.csv')
+                self.main_window.content = self.loading_page(widget)
+                with open(self.csv_file_path, "wb") as file:
                     file.write(bytes_data)
             else:
-                file_path = await self.main_window.open_file_dialog(
+                self.csv_file_path = await self.main_window.open_file_dialog(
                     self.i18n.t('import_csv_file'),
                     file_types=['csv'],
                     multiple_select=False,
                 )
-            print('open_file_dialog', file_path)
-            if not file_path:
+            print('open_file_dialog', self.csv_file_path)
+            if not self.csv_file_path:
                 return
-            self.main_window.content = self.loading_page(widget)
-            async def import_csv_task(widget, **kwargs):
-                #----------------------------------
-                ########### TASK THREAD ###########
-                self.thread_done = False
-                self.thread_result = [0, 0, {}]
-                self.thread_exception = None
-                def thread():
-                    try:
-                        self.db.save()
-                        self.db.lock()
-                        self.db.snapshot()
-                        self.thread_result = self.db.import_csv(file_path)
-                        self.db.save()
-                    except Exception as e:
-                        print(e)
-                        self.thread_exception = e
-                    finally:
-                        self.thread_done = True
-                threading.Thread(target=thread).start()
-                ########### TASK THREAD ###########
-                #----------------------------------
-                ############ UI THREAD ############
-                while not self.thread_done and self.thread_exception is None:
-                    await asyncio.sleep(1)
-                ############ UI THREAD ############
-                #----------------------------------
-                _, _, bad = self.thread_result
-                if self.thread_exception is None and not bad:
-                    self.refresh(widget)
-                    self.main_window.info_dialog(
-                        self.i18n.t('message_status'),
-                        self.i18n.t('operation_accomplished_successfully') + '\n' + self.coloned_time,
-                    )
-                else:
-                    self.main_window.error_dialog(
-                    self.i18n.t('unexpected_error'),
-                        str(self.thread_exception) + '\n' + self.coloned_time,
-                    )
-                    if self.thread_result:
-                        self.csv_bad_records_report_page(self.thread_result)
-                        return
-                self.goto_main_data_management_page(widget)
-            self.add_background_task(import_csv_task)
-        import_csv_file_button = toga.Button(self.i18n.t('import_csv_file'), on_press=import_csv_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            self.main_window.content = self.import_csv_file_scale_selection_page(widget)
+            
+        import_csv_file_button = toga.Button(self.i18n.t('import_csv_file'), on_press=select_csv_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         async def import_database_file(widget):
             print('import_database_file')

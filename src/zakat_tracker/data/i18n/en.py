@@ -77,10 +77,16 @@ translations = {
     'loading': 'Loading',
 
     # csv_bad_records_report_page
-    'csv_bad_records_report_page_title': 'Report Invalid Imported Records',
+    'csv_bad_records_report_page_title': '{} records failed to import, {} created & {} already imported',
     'csv_bad_records_report_note_1': 'Records are arranged from oldest to newest, if an error occurs the process stops immediately',
     'csv_bad_records_report_note_2': 'All data before the error has been entered, because the present depends on the past',
     'details': 'Details',
+
+    # import_csv_scale_selection_page
+    'import': 'Import',
+    'import_csv_file_scale_selection_page_label': 'Numbers Scale Form',
+    'import_csv_file_scale_description': 'Computers face challenges in accurately handling the decimal point in storage\n and retrieval because their architecture is not fully compatible with it,\nso some software stores numbers in an enlarged way to try to solve this problem,\nfor example, 1.23 when enlarged twice becomes 123\n or enlarged to a million or enlarged 6 times and 1.23 becomes stored as 1230000',
+    'scale_factor_for_values': 'The scale factor for financial values',
 
     # data_management_page
     'reset_data': 'Reset Database',
