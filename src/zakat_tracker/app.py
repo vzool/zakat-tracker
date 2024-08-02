@@ -190,8 +190,9 @@ class ZakatLedger(toga.App):
 
         self.zakat_on_boxes_note = self.label_note_widget(self.i18n.t('zakat_on_boxes_note'))
         self.table_show_row_details_note = self.label_note_widget(self.i18n.t('table_show_row_details_note'))
+        self.zakat_page_label = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.zakat_page_label_divider = toga.Divider()
         self.zakat_note = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        #self.zakat_note_divider = toga.Divider()
         self.zakat_before_note_divider = toga.Divider()
         self.zakat_after_note_divider = toga.Divider()
         self.zakat_has_just_calculated = False
@@ -230,7 +231,11 @@ class ZakatLedger(toga.App):
                     ))
 
             self.zakat_table.data = data
-            
+            self.zakat_page_label.text = self.i18n.t('zakat_page_label').format(
+                format_number(ZakatTracker.unscale(stats[0])),
+                format_number(ZakatTracker.unscale(stats[1])),
+            )
+
             if exists:
                 if hasattr(self, 'pay_button'):
                     self.pay_button.text = self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(total))}'
@@ -242,6 +247,9 @@ class ZakatLedger(toga.App):
                         style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
                     )
                     page.add(self.pay_button)
+                    page.add(self.zakat_page_label)
+                    page.add(self.zakat_page_label_divider)
+                    page.add(self.zakat_note)
                     refresh_zakat_page()
                     create_table()
                     page.add(self.zakat_before_note_divider)
@@ -264,8 +272,9 @@ class ZakatLedger(toga.App):
                     page.replace(self.pay_button, self.zakat_note)
                     self.zakat_has_just_calculated = True
                 else:
+                    page.add(self.zakat_page_label)
+                    page.add(self.zakat_page_label_divider)
                     page.add(self.zakat_note)
-                    # page.add(self.zakat_note_divider)
                 
         self.refresh_zakat_page = refresh_zakat_page
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -292,6 +301,8 @@ class ZakatLedger(toga.App):
                 style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
             )
 
+        page.add(self.zakat_page_label)
+        page.add(self.zakat_page_label_divider)
         create_table()
         refresh_zakat_page()
 
@@ -368,6 +379,7 @@ class ZakatLedger(toga.App):
         page.add(toga.Divider())
         page.add(self.label_note_widget(self.i18n.t('snapshot_note')))
         page.add(toga.Divider())
+        page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(self.snapshot_table_pagination_label)
         page.add(toga.Divider())
         page.add(self.snapshot_table)
@@ -1961,9 +1973,9 @@ class ZakatLedger(toga.App):
             print(self.zakat_plan)
         brief = self.zakat_plan[1]
         print('brief', brief)
-        _, _, self.demand = brief
-        print('demand', self.demand)
-        self.demand = round(ZakatTracker.unscale(self.demand), 2)
+        _, _, self.scaled_demand = brief
+        print('scaled_demand', self.scaled_demand)
+        self.demand = round(ZakatTracker.unscale(self.scaled_demand), 2)
         print('demand', self.demand)
         self.payment_parts_widgets = {}
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -2005,15 +2017,18 @@ class ZakatLedger(toga.App):
         page.add(self.apply_payment_parts_button)
         page.add(self.auto_pay_switch)
 
-        self.payment_parts = self.db.build_payment_parts(self.demand)
+        self.payment_parts_data = self.db.build_payment_parts(
+            scaled_demand=self.scaled_demand,
+            positive_only=True,
+        )
         if self.debug:
-            print('payment_parts', self.payment_parts)
+            print('payment_parts', self.payment_parts_data)
 
         # build form
         parts_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir, padding=12))
         
         parts_box.add(toga.Divider())
-        for account, part in self.payment_parts['account'].items():
+        for account, part in self.payment_parts_data['account'].items():
             if self.debug:
                 print(account, part)
             parts_box.add(self.payment_part_row_widget(widget, account, ZakatTracker.unscale(part['balance']), part['rate']))
@@ -2022,7 +2037,6 @@ class ZakatLedger(toga.App):
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
         page.add(back_button)
         self.main_window.content = page
-
 
     def exchange_form(self, widget, account):
         print('exchange_form', account)
@@ -2245,15 +2259,15 @@ class ZakatLedger(toga.App):
                 ok = False
                 if self.auto_pay_switch.value:
                     print('apply(auto)')
-                    ok = self.db.zakat(self.zakat_plan, debug=self.debug)
+                    ok = self.db.zakat(report=self.zakat_plan, debug=self.debug)
                 else:
                     print('apply(parts)')
                     for account, widgets in self.payment_parts_widgets.items():
                         _, _, number_input, _ = widgets
-                        self.payment_parts['account'][account]['part'] = number_input.value
+                        self.payment_parts_data['account'][account]['part'] = self.db.scale(number_input.value)
                     if self.debug:
-                        print(self.payment_parts)
-                    valid_payment_parts =  self.db.check_payment_parts(self.payment_parts, debug=self.debug)
+                        print(self.payment_parts_data)
+                    valid_payment_parts = self.db.check_payment_parts(self.payment_parts_data, debug=self.debug)
                     if self.debug:
                         print('valid_payment_parts', valid_payment_parts)
                     if valid_payment_parts != 0:
@@ -2262,7 +2276,7 @@ class ZakatLedger(toga.App):
                             self.i18n.t('invalid_payment_parts'),
                         )
                         return
-                    ok = self.db.zakat(self.zakat_plan, parts=self.payment_parts, debug=self.debug)
+                    ok = self.db.zakat(report=self.zakat_plan, parts=self.payment_parts_data, debug=self.debug)
 
                 if not ok:
                     self.main_window.error_dialog(
@@ -2277,7 +2291,7 @@ class ZakatLedger(toga.App):
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
                     self.i18n.t('operation_accomplished_successfully'),
-                )   
+                )
             except Exception as e:
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),

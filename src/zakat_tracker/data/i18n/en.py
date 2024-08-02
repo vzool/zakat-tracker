@@ -78,6 +78,7 @@ translations = {
     'auto_pay_switch': 'Paying Zakat for each box from itself - Automated Mode',
 
     # zakat_page
+    'zakat_page_label': 'Total wealth {} and total that reached one Haul or more {}',
     'refresh': 'Refresh',
     'pay': 'Pay',
     'below_nisab_note': 'Zakat due {} but the total {} is less than the Nisab {}',
