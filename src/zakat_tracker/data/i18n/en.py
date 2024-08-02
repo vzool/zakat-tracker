@@ -36,6 +36,25 @@ translations = {
     'value': 'Value',
     'math': 'Math Operation',
 
+    # snapshot_table_on_select
+    'snapshot_load_success': 'Database snapshot uploaded successfully',
+    'snapshot_load_failed': 'Database snapshot upload failed',
+    'snapshot_load_confirm_title': 'Database snapshot load',
+    'snapshot_load_confirm_message': 'Would you like to upload a snapshot of a database file at {}?',
+
+    # snapshot
+    'snapshot_success': 'Snapshot created from database file successfully',
+    'snapshot_failed': 'Snapshot created from database file failed',
+    'snapshot_confirm_title': 'Database Snapshot Confirmation',
+    'snapshot_confirm_message': 'Do you want to create a snapshot of the database file?',
+
+    # snapshot_page
+    'snapshot_button': 'Backup',
+    'snapshot_note': 'Snapshots are not duplicated if they exist or the database never changed',
+    'hash': 'Hash',
+    'path': 'Path',
+    'exists': 'Exists',
+
     # recover
     'recover_confirm_title': 'Be careful, No Rush',
     'recover_confirm_message': 'Do you want to perform this operation?',
@@ -98,6 +117,7 @@ translations = {
     'on_reset_database_message': 'Do you really want to clear the database?',
     'create_database_file_snapshot_before_any_recovery': 'Create a snapshot for database file before each recovery process',
     'data_history': 'Data History',
+    'data_snapshot': 'Data Backup',
     'show_data': 'Show Data',
     'show_raw_data': 'Show Raw Data',
     'open_database_file': 'Open Database File',

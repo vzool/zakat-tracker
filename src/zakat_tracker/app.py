@@ -304,6 +304,111 @@ class ZakatLedger(toga.App):
         page.add(self.refresh_button)
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
+    def snapshot(self, widget):
+        print('snapshot')
+        def on_result(window, confirmed):
+            if not confirmed:
+                print('cancelled')
+                return
+            print('confirmed')
+            self.db.free(self.db.lock())
+            self.db.save()
+            if self.db.snapshot():
+                self.update_snapshot(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('snapshot_success'),
+                )
+                return
+            self.main_window.error_dialog(
+                self.i18n.t('message_status'),
+                self.i18n.t('snapshot_failed'),
+            )
+        self.main_window.confirm_dialog(
+            self.i18n.t('snapshot_confirm_title'),
+            self.i18n.t('snapshot_confirm_message'),
+            on_result=on_result,
+        )
+
+    def snapshot_page(self, widget):
+        print('snapshot_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_data_management_page, style=Pack(flex=1, text_direction=self.dir))
+        snapshot_button = toga.Button(
+            self.i18n.t('snapshot_button'),
+            on_press=self.snapshot,
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+        self.snapshot_table_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
+        self.snapshot_table_data = None
+        self.snapshot_table_current_page = 1
+        self.snapshot_table_items_per_page = 13
+        self.snapshot_table = toga.Table(
+            headings=[
+                self.i18n.t('sn'),
+                self.i18n.t('ref'),
+                self.i18n.t('date'),
+                self.i18n.t('hash'),
+                self.i18n.t('path'),
+                self.i18n.t('exists'),
+            ],
+            missing_value="-",
+            data=self.snapshot_table_items(),
+            on_select=self.snapshot_table_on_select,
+            on_activate=lambda e, row: self.main_window.info_dialog(
+                self.i18n.t('row_details'),
+                self.row_details_str(self.snapshot_table.headings, row),
+            ),
+            style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
+        )
+        page.add(snapshot_button)
+        page.add(toga.Divider())
+        page.add(self.label_note_widget(self.i18n.t('snapshot_note')))
+        page.add(toga.Divider())
+        page.add(self.snapshot_table_pagination_label)
+        page.add(toga.Divider())
+        page.add(self.snapshot_table)
+        buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def last(widget):
+            print('last')        
+            if self.snapshot_table_current_page == self.snapshot_table_total_pages:
+                return
+            self.snapshot_table_current_page = self.snapshot_table_total_pages
+            self.update_snapshot(widget)
+        def next(widget):
+            print('next')
+            if self.snapshot_table_current_page < self.snapshot_table_total_pages:
+                self.snapshot_table_current_page += 1
+                self.update_snapshot(widget)
+        def previous(widget):
+            print('previous')
+            if self.snapshot_table_current_page > 1:
+                self.snapshot_table_current_page -= 1
+                self.update_snapshot(widget)
+        def first(widget):
+            print('first')
+            if self.snapshot_table_current_page == 1:
+                return
+            self.snapshot_table_current_page = 1
+            self.update_snapshot(widget)
+        first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.update_snapshot, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        buttons_box.add(first_button)
+        buttons_box.add(previous_button)
+        buttons_box.add(refresh_button)
+        buttons_box.add(next_button)
+        buttons_box.add(last_button)
+        page.add(buttons_box)
+        page.add(back_button)
+        self.snapshot_main_page = page
+        self.main_window.content = self.snapshot_main_page
+
     def recover(self, widget):
         print('recover')
         def on_result(window, confirmed):
@@ -722,6 +827,7 @@ class ZakatLedger(toga.App):
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
         data_history_button = toga.Button(self.i18n.t('data_history'), on_press=self.history_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        data_snapshot_button = toga.Button(self.i18n.t('data_snapshot'), on_press=self.snapshot_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         async def select_csv_file(widget):
             print('select_csv_file')
@@ -942,6 +1048,8 @@ class ZakatLedger(toga.App):
         page.add(create_database_file_snapshot_before_any_recovery_switch)
         page.add(toga.Divider())
         page.add(data_history_button)
+        page.add(toga.Divider())
+        page.add(data_snapshot_button)
         page.add(toga.Divider())
         page.add(ram_size_box)
         page.add(toga.Divider())
@@ -1614,6 +1722,28 @@ class ZakatLedger(toga.App):
         )
         return chunk
 
+    def snapshot_table_items(self):
+        if self.snapshot_table_data is None:
+            self.snapshot_table_data = [(
+                k,
+                ZakatTracker.time_to_datetime(k),
+                file_hash,
+                file_path,
+                file_exists,
+            ) for k, (file_hash, file_path, file_exists) in sorted(self.db.snapshots().items(), reverse=True)]
+        chunk, self.snapshot_table_total_pages, self.snapshot_table_total_items = self.paginate(
+            self.snapshot_table_data,
+            self.snapshot_table_items_per_page,
+            self.snapshot_table_current_page,
+        )
+        self.snapshot_table_pagination_label.text = self.i18n.t('table_pagination_label').format(
+            format_number(self.snapshot_table_total_items),
+            format_number(self.snapshot_table_items_per_page),
+            format_number(self.snapshot_table_current_page),
+            format_number(self.snapshot_table_total_pages),
+        )
+        return chunk
+
     def accounts_table_items(self):
         if self.accounts_table_data is None:
             self.accounts_table_data = [(
@@ -1737,6 +1867,39 @@ class ZakatLedger(toga.App):
             return None  # Return None if no match
 
     # handlers
+
+    def snapshot_table_on_select(self, widget):
+        print('snapshot_table_on_select', widget.selection)
+        access_key = self.i18n.t('path')
+        print('snapshot_table_on_select', f'access_key({access_key})')
+        if not hasattr(widget.selection, access_key):
+            return
+        path = getattr(widget.selection, access_key)
+        date = getattr(widget.selection, self.i18n.t('date'))
+        print('snapshot_table_on_select', path)
+        def on_result(window, confirmed):
+            if not confirmed:
+                print('cancelled')
+                return
+            print('confirmed')
+            self.db.free(self.db.lock())
+            self.db.save()
+            if self.db.load(path):
+                self.refresh(widget)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('snapshot_load_success'),
+                )
+                return
+            self.main_window.error_dialog(
+                self.i18n.t('message_status'),
+                self.i18n.t('snapshot_load_failed'),
+            )
+        self.main_window.confirm_dialog(
+            self.i18n.t('snapshot_load_confirm_title'),
+            self.i18n.t('snapshot_load_confirm_message').format(date),
+            on_result=on_result,
+        )
 
     def history_table_on_select(self, widget):
         print('history_table_on_select', widget.selection)
@@ -2044,6 +2207,10 @@ class ZakatLedger(toga.App):
         print('cancel')
         self.title()
         self.main_window.content = self.main_box
+
+    def update_snapshot(self, widget):
+        self.snapshot_table_data = None
+        self.snapshot_table.data = self.snapshot_table_items()
 
     def update_history(self, widget):
         self.history_table.data = self.history_table_items()

@@ -36,6 +36,25 @@ translations = {
     'value': 'القيمة (Value)',
     'math': 'العملية الرياضية (Math)',
 
+    # snapshot_table_on_select
+    'snapshot_load_success': 'تم تحميل صورة قاعدة البيانات بنجاح',
+    'snapshot_load_failed': 'فشلت عملية تحميل صورة قاعدة البيانات',
+    'snapshot_load_confirm_title': 'تحميل صورة ملف قاعدة البيانات',
+    'snapshot_load_confirm_message': 'هل ترغب في تحميل صورة ملف قاعدة البيانات بتاريخ {}؟',
+
+    # snapshot
+    'snapshot_success': 'تم بنجاح إنشاء صورة من ملف قاعدة البيانات',
+    'snapshot_failed': 'فشلت عملية إنشاء صورة من ملف قاعدة البيانات',
+    'snapshot_confirm_title': 'إنشاء صورة لملف قاعدة البيانات',
+    'snapshot_confirm_message': 'هل ترغب في إنشاء صورة احتياطية لملف قاعدة البيانات؟',
+
+    # snapshot_page
+    'snapshot_button': 'نسخ احتياطي',
+    'snapshot_note': 'لا تتكرر الصور إذا كانت موجودة سلفا أو لم يحدث تغيير على قاعدة البيانات',
+    'hash': 'العصارة',
+    'path': 'المسار',
+    'exists': 'متوفر',
+
     # recover
     'recover_confirm_title': 'احذر ولا تتسرع',
     'recover_confirm_message': 'هل ترغب بالفعل في تنفيذ هذه العملية؟',
@@ -98,6 +117,7 @@ translations = {
     'on_reset_database_message': 'هل ترغب بالفعل في مسح قاعدة البيانات؟',
     'create_database_file_snapshot_before_any_recovery': 'أنشئ صورة احتياطية لملف قاعدة البيانات قبل كل استرجاع',
     'data_history': 'تاريخ البيانات',
+    'data_snapshot': 'النسخ الاحتياطي',
     'show_data': 'عرض البيانات',
     'show_raw_data': 'عرض البيانات بشكل خام',
     'open_database_file': 'فتح ملف قاعدة البيانات',
