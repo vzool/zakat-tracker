@@ -190,8 +190,11 @@ class ZakatLedger(toga.App):
 
         self.zakat_on_boxes_note = self.label_note_widget(self.i18n.t('zakat_on_boxes_note'))
         self.table_show_row_details_note = self.label_note_widget(self.i18n.t('table_show_row_details_note'))
+        self.zakat_page_label_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir))
         self.zakat_page_label = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         self.zakat_page_label_divider = toga.Divider()
+        self.zakat_page_label_box.add(self.zakat_page_label)
+        self.zakat_page_label_box.add(self.zakat_page_label_divider)
         self.zakat_note = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         self.zakat_before_note_divider = toga.Divider()
         self.zakat_after_note_divider = toga.Divider()
@@ -236,8 +239,13 @@ class ZakatLedger(toga.App):
                 format_number(ZakatTracker.unscale(stats[1])),
             )
 
+            pay_button_shown = False
+            if hasattr(self, 'pay_button'):
+                pay_button_shown = self.pay_button in page.children
+
             if exists:
-                if hasattr(self, 'pay_button'):
+                page.remove(self.zakat_note)
+                if pay_button_shown:
                     self.pay_button.text = self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(total))}'
                 else:
                     page.clear()
@@ -247,9 +255,7 @@ class ZakatLedger(toga.App):
                         style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
                     )
                     page.add(self.pay_button)
-                    page.add(self.zakat_page_label)
-                    page.add(self.zakat_page_label_divider)
-                    page.add(self.zakat_note)
+                    page.add(self.zakat_page_label_box)
                     refresh_zakat_page()
                     create_table()
                     page.add(self.zakat_before_note_divider)
@@ -264,18 +270,11 @@ class ZakatLedger(toga.App):
                 total_str = format_number(round(ZakatTracker.unscale(stats[1]), 2))
                 nisab_str = format_number(round(self.nisab, 2))
                 self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
-                if self.zakat_has_just_calculated:
-                    print('--------- OK ---------')
-                    return
-                if hasattr(self, 'pay_button'):
-                    print('--------- HIT ---------')
-                    page.replace(self.pay_button, self.zakat_note)
-                    self.zakat_has_just_calculated = True
-                else:
-                    page.add(self.zakat_page_label)
-                    page.add(self.zakat_page_label_divider)
-                    page.add(self.zakat_note)
-                
+                if pay_button_shown:
+                    self.zakat_page_label_box.add(self.zakat_note)
+                    page.replace(self.pay_button, self.zakat_page_label_box)
+                # page.add(self.zakat_note)
+
         self.refresh_zakat_page = refresh_zakat_page
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
@@ -301,8 +300,8 @@ class ZakatLedger(toga.App):
                 style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align),
             )
 
-        page.add(self.zakat_page_label)
-        page.add(self.zakat_page_label_divider)
+        page.add(self.zakat_page_label_box)
+        page.add(self.zakat_note)
         create_table()
         refresh_zakat_page()
 
