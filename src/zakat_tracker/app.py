@@ -477,13 +477,16 @@ class ZakatLedger(toga.App):
 
     def loading_page(self, widget):
         print('loading_page')
-        page = toga.Box(style=Pack(direction=COLUMN, flex=1, padding=(150,0), text_direction=self.dir))
+        box = toga.Box(style=Pack(direction=COLUMN, flex=1, padding=(15,0), text_direction=self.dir))
+        logo = toga.ImageView("resources/zakat_tracker.png", style=Pack(flex=1, height=333))
         animation_label = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=60, text_direction=self.dir))
         page_label = toga.Label(self.i18n.t('loading'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=21, text_direction=self.dir))
         timer_label = toga.Label('', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=12, text_direction=self.dir))
-        page.add(animation_label)
-        page.add(page_label)
-        page.add(timer_label)
+        box.add(logo)
+        box.add(animation_label)
+        box.add(page_label)
+        box.add(timer_label)
+        page = toga.ScrollContainer(content=box)
         if self.debug_loading_page:
             page.add(toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir)))
         # loading_animation
