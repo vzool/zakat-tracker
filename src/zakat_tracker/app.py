@@ -1851,7 +1851,9 @@ class ZakatLedger(toga.App):
         return chunk
 
     def accounts_selection_items(self):
-        return [""] + [ f'{k} ({v})' for k,v in sorted(self.db.accounts().items())]
+        return [""] + [
+            f'{k} ({self.db.unscale(v)})' for k,v in sorted(self.db.accounts().items())
+        ]
 
     # helpers
 
