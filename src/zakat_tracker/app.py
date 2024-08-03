@@ -165,7 +165,7 @@ class ZakatLedger(toga.App):
 
     def main_tabs_page(self):
         print('main_tabs_page')
-        self.main_box = toga.OptionContainer(
+        self.main_tabs_page_box = toga.OptionContainer(
             content=[
                 (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
                 (self.i18n.t('transactions'), self.transactions_page(), toga.Icon("resources/icon/transactions.png")),
@@ -174,12 +174,23 @@ class ZakatLedger(toga.App):
             ],
             style=Pack(text_direction=self.dir),
         )
-        self.main_window.content = self.main_box
+        self.main_window.content = self.main_tabs_page_box
 
     def refresh(self, widget):
         print('refresh')
         start = ZakatTracker.time()
         self.update_accounts(widget)
+        #=======================================================
+        # transactions_page
+        #=======================================================
+        self.main_tabs_page_box.content.remove(1)
+        item = toga.widgets.optioncontainer.OptionItem(
+            text=self.i18n.t('transactions'),
+            content=self.transactions_page(),
+            icon=toga.Icon("resources/icon/transactions.png"),
+        )
+        self.main_tabs_page_box.content.insert(1, item)
+        #=======================================================
         self.refresh_zakat_page()
         finish = ZakatTracker.time()
         self.refresh_time = self.format_time(finish - start)
@@ -2251,7 +2262,7 @@ class ZakatLedger(toga.App):
     def goto_main_page(self, widget):
         print('cancel')
         self.title()
-        self.main_window.content = self.main_box
+        self.main_window.content = self.main_tabs_page_box
 
     def update_snapshot(self, widget):
         self.snapshot_table_data = None
@@ -2318,7 +2329,7 @@ class ZakatLedger(toga.App):
                     
                 self.db.save()
                 self.refresh(widget)
-                self.main_window.content = self.main_box
+                self.goto_main_page()
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
                     self.i18n.t('operation_accomplished_successfully'),
