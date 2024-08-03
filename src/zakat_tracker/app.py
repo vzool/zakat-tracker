@@ -1338,13 +1338,12 @@ class ZakatLedger(toga.App):
     def transactions_page(self):
         print('transactions_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        # return page
         for k, v in self.db.daily_logs().items():
             date = self.db.time_to_datetime(k)
             weekday = self.i18n.t(date.strftime("%A").lower())
             date_str = str(date).replace(' 00:00:00', '')
             page.add(toga.Box(
-                style=Pack(direction=ROW, text_direction=self.dir, flex=1, background_color="#CCCCCC"),
+                style=Pack(direction=ROW, text_direction=self.dir, background_color="#CCCCCC"),
                 children=[
                     toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
                     toga.Label(format_number(self.db.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
@@ -1352,9 +1351,9 @@ class ZakatLedger(toga.App):
             ))
             page.add(toga.Divider())
             for x in v['rows']:
-                page.add(toga.Label(x['desc'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)))
+                page.add(toga.Label(x['desc'], style=Pack(text_direction=self.dir, text_align=self.text_align)))
                 page.add(toga.Box(
-                    style=Pack(direction=ROW, text_direction=self.dir, flex=1),
+                    style=Pack(direction=ROW, text_direction=self.dir),
                     children=[
                         toga.Label(x['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
                         toga.Label(format_number(self.db.unscale(x['value'])), style=Pack(flex=1, text_direction=self.dir, text_align=self.text_end)),
