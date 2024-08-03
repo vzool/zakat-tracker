@@ -1353,20 +1353,24 @@ class ZakatLedger(toga.App):
             for x in v['rows']:
                 text = '=' if x['transfer'] else ('+' if x['value'] > 0 else '-')
                 background_color='#4e91fd' if x['transfer'] else ('#30cb00' if x['value'] > 0 else '#FF5252')
-                page.add(toga.Label(x['desc'], style=Pack(text_direction=self.dir, text_align=self.text_align)))
-                page.add(toga.Box(
-                    style=Pack(direction=ROW, text_direction=self.dir),
-                    children=[
-                        toga.Label(text, style=Pack(background_color=background_color, width=24, font_weight='bold', text_align='center', font_size=18)),
-                        toga.Label(x['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
-                        toga.Label(format_number(self.db.unscale(x['value'])), style=Pack(
-                            flex=1,
-                            text_direction=self.dir,
-                            text_align=self.text_end,
-                            color='#30cb00' if x['value'] > 0 else '#FF5252',
-                        )),
-                    ],
-                ))
+                page.add(toga.Box(children=[
+                    toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
+                    toga.Box(children=[
+                        toga.Label(x['desc'], style=Pack(text_direction=self.dir, text_align=self.text_align)),
+                        toga.Box(
+                            style=Pack(direction=ROW, text_direction=self.dir),
+                            children=[
+                                toga.Label(x['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
+                                toga.Label(format_number(self.db.unscale(x['value'])), style=Pack(
+                                    flex=1,
+                                    text_direction=self.dir,
+                                    text_align=self.text_end,
+                                    color='#30cb00' if x['value'] > 0 else '#FF5252',
+                                )),
+                            ],
+                        ),
+                    ], style=Pack(direction=COLUMN, flex=1, text_direction=self.dir)),
+                ], style=Pack(direction=ROW, text_direction=self.dir)))
                 page.add(toga.Divider())
             page.add(toga.Divider())
         return toga.ScrollContainer(content=page, style=Pack(flex=1))
