@@ -159,6 +159,7 @@ class ZakatLedger(toga.App):
 
         self.dir = self.i18n.t('dir', 'rtl')
         self.text_align = self.i18n.t('text_align', 'right')
+        self.text_end = self.i18n.t('text_end', 'left')
 
     # pages
 
@@ -167,8 +168,8 @@ class ZakatLedger(toga.App):
         self.main_box = toga.OptionContainer(
             content=[
                 (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
+                (self.i18n.t('transactions'), self.transactions_page(), toga.Icon("resources/icon/transactions.png")),
                 (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("resources/icon/zakat.png")),
-                # (self.i18n.t('history'), self.history_page(), toga.Icon("resources/icon/history.png")),
                 (self.i18n.t('settings'), self.settings_page(), toga.Icon("resources/icon/settings.png")),
             ],
             style=Pack(text_direction=self.dir),
@@ -1322,6 +1323,35 @@ class ZakatLedger(toga.App):
         buttons_box.add(last_button)
         page.add(buttons_box)
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
+
+    def transactions_page(self):
+        print('transactions_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        # return page
+        for k, v in self.db.daily_logs().items():
+            date = self.db.time_to_datetime(k)
+            weekday = self.i18n.t(date.strftime("%A").lower())
+            date_str = str(date).replace(' 00:00:00', '')
+            page.add(toga.Box(
+                style=Pack(direction=ROW, text_direction=self.dir, flex=1, background_color="#CCCCCC"),
+                children=[
+                    toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
+                    toga.Label(format_number(self.db.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
+                ],
+            ))
+            page.add(toga.Divider())
+            for x in v['rows']:
+                page.add(toga.Label(x['desc'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)))
+                page.add(toga.Box(
+                    style=Pack(direction=ROW, text_direction=self.dir, flex=1),
+                    children=[
+                        toga.Label(x['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
+                        toga.Label(format_number(self.db.unscale(x['value'])), style=Pack(flex=1, text_direction=self.dir, text_align=self.text_end)),
+                    ],
+                ))
+                page.add(toga.Divider())
+            page.add(toga.Divider())
+        return toga.ScrollContainer(content=page, style=Pack(flex=1))
 
     def history_details_page(self, widget, ref):
         print('history_details_page', ref)

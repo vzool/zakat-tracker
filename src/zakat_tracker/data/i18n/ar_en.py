@@ -2,6 +2,7 @@ translations = {
     # app
     'dir': 'rtl',
     'text_align': 'right',
+    'text_end': 'left',
     'formal_name': 'متتبع الزكاة (Zakat Tracker)',
 
     # time
@@ -23,6 +24,7 @@ translations = {
 
     # main_tabs_page
     'accounts': 'الحسابات (Accounts)',
+    'transactions': 'القيود',
     'zakat': 'الزكاة (Zakat)',
     'history': 'التاريخ (History)',
     'settings': 'الاعدادات (Settings)',
@@ -158,6 +160,15 @@ translations = {
     'log': 'حركة (Log)',
     'yes': 'نعم',
     'no': 'لا',
+
+    # transactions_page
+    'saturday': 'السبت',
+    'sunday': 'الأحد',
+    'monday': 'الإثنين',
+    'tuesday': 'الثلاثاء',
+    'wednesday': 'الأربعاء',
+    'thursday': 'الخميس',
+    'friday': 'الجمعة',
 
     # account_tabs_page
     'boxes': 'الصناديق (Boxes)',
