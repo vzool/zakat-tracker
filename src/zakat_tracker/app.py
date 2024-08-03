@@ -2362,7 +2362,7 @@ class ZakatLedger(toga.App):
                     
                 self.db.save()
                 self.refresh(widget)
-                self.goto_main_page()
+                self.goto_main_page(widget)
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
                     self.i18n.t('operation_accomplished_successfully'),
