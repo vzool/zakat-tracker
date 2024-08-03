@@ -169,6 +169,7 @@ translations = {
     'wednesday': 'Wednesday',
     'thursday': 'Thursday',
     'friday': 'Friday',
+    'no_data': 'No Data',
 
     # account_tabs_page
     'boxes': 'Boxes',

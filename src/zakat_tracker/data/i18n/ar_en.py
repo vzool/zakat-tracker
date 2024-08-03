@@ -169,6 +169,7 @@ translations = {
     'wednesday': 'الأربعاء',
     'thursday': 'الخميس',
     'friday': 'الجمعة',
+    'no_data': 'لا بيانات',
 
     # account_tabs_page
     'boxes': 'الصناديق (Boxes)',

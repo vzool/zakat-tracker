@@ -26,6 +26,13 @@ def format_number(x) -> str:
         return '0'
     return format(float(y), ',').rstrip('0').rstrip('.')
 
+def trim_with_ellipsis(text, max_length=51):
+    """Trims a string to the specified maximum length, adding ellipsis (...) if truncated."""
+    if len(text) <= max_length:
+        return text  # No trimming needed
+    else:
+        return text[:max_length - 3] + "..."  # Trim and add ellipsis
+
 start_time = ZakatTracker.time()
 
 class ZakatLedger(toga.App):
@@ -1338,7 +1345,8 @@ class ZakatLedger(toga.App):
     def transactions_page(self):
         print('transactions_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        for k, v in self.db.daily_logs().items():
+        data = self.db.daily_logs().items()
+        for k, v in data:
             date = self.db.time_to_datetime(k)
             weekday = self.i18n.t(date.strftime("%A").lower())
             date_str = str(date).replace(' 00:00:00', '')
@@ -1356,7 +1364,7 @@ class ZakatLedger(toga.App):
                 page.add(toga.Box(children=[
                     toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
                     toga.Box(children=[
-                        toga.Label(x['desc'], style=Pack(text_direction=self.dir, text_align=self.text_align)),
+                        toga.Label(trim_with_ellipsis(x['desc']), style=Pack(text_direction=self.dir, text_align=self.text_align)),
                         toga.Box(
                             style=Pack(direction=ROW, text_direction=self.dir),
                             children=[
@@ -1373,6 +1381,20 @@ class ZakatLedger(toga.App):
                 ], style=Pack(direction=ROW, text_direction=self.dir)))
                 page.add(toga.Divider())
             page.add(toga.Divider())
+        if not data:
+            page.add(toga.Box(
+                style=Pack(direction=COLUMN, flex=1, text_direction=self.dir),
+                children=[
+                    toga.ImageView(
+                        "resources/background/clear-moon.png",
+                        style=Pack(width=240, alignment='center', padding=45, text_align='center')
+                    ),
+                    toga.Label(
+                        self.i18n.t('no_data'),
+                        style=Pack(text_align='center', font_size=18, flex=1, text_direction=self.dir),
+                    ),
+                ],
+            ))
         return toga.ScrollContainer(content=page, style=Pack(flex=1))
 
     def history_details_page(self, widget, ref):
