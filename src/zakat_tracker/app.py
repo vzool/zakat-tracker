@@ -1342,6 +1342,28 @@ class ZakatLedger(toga.App):
         page.add(buttons_box)
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
+    def transaction_row_widget(self, row):
+        text = '=' if row['transfer'] else ('+' if row['value'] > 0 else '-')
+        background_color='#4e91fd' if row['transfer'] else ('#30cb00' if row['value'] > 0 else '#FF5252')
+        return toga.Box(children=[
+            toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
+            toga.Box(children=[
+                toga.Label(trim_with_ellipsis(row['desc']), style=Pack(text_direction=self.dir, text_align=self.text_align)),
+                toga.Box(
+                    style=Pack(direction=ROW, text_direction=self.dir),
+                    children=[
+                        toga.Label(row['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
+                        toga.Label(format_number(self.db.unscale(row['value'])), style=Pack(
+                            flex=1,
+                            text_direction=self.dir,
+                            text_align=self.text_end,
+                            color='#30cb00' if row['value'] > 0 else '#FF5252',
+                        )),
+                    ],
+                ),
+            ], style=Pack(direction=COLUMN, flex=1, text_direction=self.dir)),
+        ], style=Pack(direction=ROW, text_direction=self.dir))
+
     def transactions_page(self):
         print('transactions_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -1359,42 +1381,11 @@ class ZakatLedger(toga.App):
             ))
             page.add(toga.Divider())
             for x in v['rows']:
-                text = '=' if x['transfer'] else ('+' if x['value'] > 0 else '-')
-                background_color='#4e91fd' if x['transfer'] else ('#30cb00' if x['value'] > 0 else '#FF5252')
-                page.add(toga.Box(children=[
-                    toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
-                    toga.Box(children=[
-                        toga.Label(trim_with_ellipsis(x['desc']), style=Pack(text_direction=self.dir, text_align=self.text_align)),
-                        toga.Box(
-                            style=Pack(direction=ROW, text_direction=self.dir),
-                            children=[
-                                toga.Label(x['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
-                                toga.Label(format_number(self.db.unscale(x['value'])), style=Pack(
-                                    flex=1,
-                                    text_direction=self.dir,
-                                    text_align=self.text_end,
-                                    color='#30cb00' if x['value'] > 0 else '#FF5252',
-                                )),
-                            ],
-                        ),
-                    ], style=Pack(direction=COLUMN, flex=1, text_direction=self.dir)),
-                ], style=Pack(direction=ROW, text_direction=self.dir)))
+                page.add(self.transaction_row_widget(x))
                 page.add(toga.Divider())
             page.add(toga.Divider())
         if not data:
-            page.add(toga.Box(
-                style=Pack(direction=COLUMN, flex=1, text_direction=self.dir),
-                children=[
-                    toga.ImageView(
-                        "resources/background/clear-moon.png",
-                        style=Pack(width=240, alignment='center', padding=45, text_align='center')
-                    ),
-                    toga.Label(
-                        self.i18n.t('no_data'),
-                        style=Pack(text_align='center', font_size=18, flex=1, text_direction=self.dir),
-                    ),
-                ],
-            ))
+            page.add(self.no_data_widget())
         return toga.ScrollContainer(content=page, style=Pack(flex=1))
 
     def history_details_page(self, widget, ref):
@@ -2649,6 +2640,21 @@ class ZakatLedger(toga.App):
         footer.add(cancel_button)
         footer.add(save_button)
         return footer
+
+    def no_data_widget(self):
+        return toga.Box(
+            style=Pack(direction=COLUMN, flex=1, text_direction=self.dir),
+            children=[
+                toga.ImageView(
+                    "resources/background/clear-moon.png",
+                    style=Pack(width=240, alignment='center', padding=45, text_align='center')
+                ),
+                toga.Label(
+                    self.i18n.t('no_data'),
+                    style=Pack(text_align='center', font_size=18, flex=1, text_direction=self.dir),
+                ),
+            ],
+        )
 
     # transformers
 
