@@ -19,6 +19,10 @@ import json
 import asyncio
 import threading
 from time import time_ns
+if toga.platform.current_platform.lower() == 'macos':
+    from .fork.toga_cocoa.box import Box
+else:
+    from .fork.toga.box import Box
 
 def format_number(x) -> str:
     y = str(x).rstrip('0').rstrip('.')
@@ -1345,7 +1349,9 @@ class ZakatLedger(toga.App):
     def transaction_row_widget(self, row):
         text = '=' if row['transfer'] else ('+' if row['value'] > 0 else '-')
         background_color='#4e91fd' if row['transfer'] else ('#30cb00' if row['value'] > 0 else '#FF5252')
-        return toga.Box(children=[
+        def on_press(widget):
+            print('on_press', widget)
+        return Box(on_press=on_press, children=[
             toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
             toga.Box(children=[
                 toga.Label(trim_with_ellipsis(row['desc']), style=Pack(text_direction=self.dir, text_align=self.text_align)),
