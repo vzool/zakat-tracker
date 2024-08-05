@@ -1384,7 +1384,7 @@ class ZakatLedger(toga.App):
                 page.add(self.transaction_row_widget(x))
                 page.add(toga.Divider())
             page.add(toga.Divider())
-        if not self.daily_logs_data:
+        if not self.daily_logs_data['daily']:
             page.add(self.no_data_widget())
         return toga.ScrollContainer(content=page, style=Pack(flex=1))
 
