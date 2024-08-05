@@ -91,6 +91,7 @@ class ZakatLedger(toga.App):
             def thread():
                 try:
                     self.db.load()
+                    self.daily_logs_data = self.db.daily_logs()
                     if self.config_calculating_database_stats_on_startup:
                         self.stats = self.db.stats()
                 except Exception as e:
@@ -190,6 +191,7 @@ class ZakatLedger(toga.App):
         #=======================================================
         # transactions_page
         #=======================================================
+        self.daily_logs_data = self.db.daily_logs()
         self.main_tabs_page_box.content.remove(1)
         item = toga.widgets.optioncontainer.OptionItem(
             text=self.i18n.t('transactions'),
@@ -1367,11 +1369,9 @@ class ZakatLedger(toga.App):
     def transactions_page(self):
         print('transactions_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        data = self.db.daily_logs().items()
-        for k, v in data:
-            date = self.db.time_to_datetime(k)
+        for date_str, v in self.daily_logs_data['daily'].items():
+            date = datetime.strptime(date_str, '%Y-%m-%d')
             weekday = self.i18n.t(date.strftime("%A").lower())
-            date_str = str(date).replace(' 00:00:00', '')
             page.add(toga.Box(
                 style=Pack(direction=ROW, text_direction=self.dir, background_color="#CCCCCC"),
                 children=[
@@ -1384,7 +1384,7 @@ class ZakatLedger(toga.App):
                 page.add(self.transaction_row_widget(x))
                 page.add(toga.Divider())
             page.add(toga.Divider())
-        if not data:
+        if not self.daily_logs_data:
             page.add(self.no_data_widget())
         return toga.ScrollContainer(content=page, style=Pack(flex=1))
 
