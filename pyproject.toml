@@ -25,7 +25,6 @@ test_sources = [
 requires = [
     "zakat",
     "toga-chart",
-    "numpy",
 ]
 test_requires = [
     "pytest",

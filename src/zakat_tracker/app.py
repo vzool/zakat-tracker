@@ -22,7 +22,6 @@ import json
 import asyncio
 import threading
 import toga_chart
-import numpy as np
 
 def format_number(x) -> str:
     y = str(x).rstrip('0').rstrip('.')
@@ -215,22 +214,23 @@ class ZakatLedger(toga.App):
         #=======================================================
         # transactions_page
         #=======================================================
+        tab_index = 2
         self.daily_logs_data = self.db.daily_logs()
-        transactions_tab = self.main_tabs_page_box.content.index(self.main_tabs_page_box.current_tab) == 1
+        transactions_tab = self.main_tabs_page_box.content.index(self.main_tabs_page_box.current_tab) == tab_index
         print('is transactions_tab?', transactions_tab)
         if transactions_tab:
             # move to first tab
             self.main_tabs_page_box.current_tab = 0
-        self.main_tabs_page_box.content.remove(1)
+        self.main_tabs_page_box.content.remove(tab_index)
         item = toga.widgets.optioncontainer.OptionItem(
             text=self.i18n.t('transactions'),
             content=self.transactions_page(),
             icon=toga.Icon("resources/icon/transactions.png"),
         )
-        self.main_tabs_page_box.content.insert(1, item)
+        self.main_tabs_page_box.content.insert(tab_index, item)
         if transactions_tab:
             # go back to transctions tab
-            self.main_tabs_page_box.current_tab = 1
+            self.main_tabs_page_box.current_tab = tab_index
         #=======================================================
         self.refresh_zakat_page()
         finish = ZakatTracker.time()
@@ -1290,32 +1290,25 @@ class ZakatLedger(toga.App):
     ##############################################################################
     def set_data(self):
         # Generate some example data
-        self.x = self.mu.value + self.sigma.value * np.random.randn(1000)
+        pass
+        # self.x = self.mu.value + self.sigma.value * np.random.randn(1000)
 
     def recreate_data(self, widget):
         self.set_data()
         self.chart.redraw()
 
     def draw_chart(self, chart, figure, *args, **kwargs):
-        num_bins = 50
 
         # Add a subplot that is a histogram of the data,
         # using the normal matplotlib API
-        ax = figure.add_subplot(1, 1, 1)
-        n, bins, patches = ax.hist(self.x, num_bins, density=1, range=(0, 200))
+        ax = figure.add_subplot()
+        data = {k: (v['positive'], v['negative'], v['total']) for k,v in self.daily_logs_data['daily'].items()}
+        width = 0.6  # the width of the bars: can also be len(x) sequence
+        print("self.daily_logs_data['daily']", data)
 
-        # add a 'best fit' line
-        y = (1 / (np.sqrt(2 * np.pi) * self.sigma.value)) * np.exp(
-            -0.5 * (1 / self.sigma.value * (bins - self.mu.value)) ** 2
-        )
-        ax.plot(bins, y, "--")
-
-        ax.set_xlabel("Value")
-        ax.set_ylabel("Probability density")
-        ax.set_title(
-            rf"Histogram: $\mu={self.mu.value:.1f}$, "
-            rf"$\sigma={self.sigma.value:.1f}$"
-        )
+        for k,v in data.items():
+            p = ax.bar(data.keys(), v, width, label=k)
+            ax.bar_label(p, label_type='center')
 
         figure.tight_layout()
 
