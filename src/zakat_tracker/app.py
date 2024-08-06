@@ -90,6 +90,7 @@ class ZakatLedger(toga.App):
             self.thread_exception = None
             def thread():
                 try:
+                    self.daily_logs_data = self.db.daily_logs_init()
                     self.db.load()
                     self.daily_logs_data = self.db.daily_logs()
                     if self.config_calculating_database_stats_on_startup:
