@@ -2,6 +2,9 @@
 Personal Accounting Software using Zakat way for all transactions from the beginning to the end
 """
 
+from time import time_ns
+start_time = time_ns()
+
 import re
 import os
 import toga
@@ -18,7 +21,6 @@ import pathlib
 import json
 import asyncio
 import threading
-from time import time_ns
 
 def format_number(x) -> str:
     y = str(x).rstrip('0').rstrip('.')
@@ -33,7 +35,13 @@ def trim_with_ellipsis(text, max_length=51):
     else:
         return text[:max_length - 3] + "..."  # Trim and add ellipsis
 
-start_time = ZakatTracker.time()
+def dict_details_str(row: dict) -> str:
+    result = ''
+    i = 0
+    for k, v in row.items():
+        i += 1
+        result += f'{i}- {k} = {v}\n'
+    return result
 
 class ZakatLedger(toga.App):
     def startup(self):
@@ -114,7 +122,7 @@ class ZakatLedger(toga.App):
                     str(self.thread_exception) + '\n' + self.coloned_time,
                 )
             self.main_tabs_page()
-            self.finish_time = ZakatTracker.time()
+            self.finish_time = time_ns()
             self.load_time = self.format_time(self.finish_time - start_time)
             print(self.load_time)
         self.add_background_task(load_task)
@@ -1348,24 +1356,27 @@ class ZakatLedger(toga.App):
     def transaction_row_widget(self, row):
         text = '=' if row['transfer'] else ('+' if row['value'] > 0 else '-')
         background_color='#4e91fd' if row['transfer'] else ('#30cb00' if row['value'] > 0 else '#FF5252')
-        return toga.Box(children=[
+        return toga.Box(style=Pack(direction=ROW, text_direction=self.dir), children=[
             toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
-            toga.Box(children=[
+            toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir), children=[
                 toga.Label(trim_with_ellipsis(row['desc']), style=Pack(text_direction=self.dir, text_align=self.text_align)),
-                toga.Box(
-                    style=Pack(direction=ROW, text_direction=self.dir),
-                    children=[
-                        toga.Label(row['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
-                        toga.Label(format_number(self.db.unscale(row['value'])), style=Pack(
-                            flex=1,
-                            text_direction=self.dir,
-                            text_align=self.text_end,
-                            color='#30cb00' if row['value'] > 0 else '#FF5252',
-                        )),
-                    ],
-                ),
-            ], style=Pack(direction=COLUMN, flex=1, text_direction=self.dir)),
-        ], style=Pack(direction=ROW, text_direction=self.dir))
+                toga.Label(row['account'], style=Pack(flex=1, text_direction=self.dir, text_align=self.text_align)),
+            ]),
+            toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir),
+                children=[
+                    toga.Label(format_number(self.db.unscale(row['value'])), style=Pack(
+                        flex=1,
+                        text_direction=self.dir,
+                        text_align=self.text_end,
+                        color='#30cb00' if row['value'] > 0 else '#FF5252',
+                    )),
+                    toga.Button('...', on_press=lambda e: self.main_window.info_dialog(
+                        self.i18n.t('row_details'),
+                        dict_details_str(row),
+                    )),
+                ],
+            ),
+        ])
 
     def transactions_page(self):
         print('transactions_page')
