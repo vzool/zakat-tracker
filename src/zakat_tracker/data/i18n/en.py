@@ -23,6 +23,7 @@ translations = {
     'on_exit_message': 'Are you sure you want to exit the application?',
 
     # main_tabs_page
+    'main': 'Main',
     'accounts': 'Accounts',
     'transactions': 'ُTransactions',
     'zakat': 'Zakat',

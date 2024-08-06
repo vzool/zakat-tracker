@@ -21,6 +21,8 @@ import pathlib
 import json
 import asyncio
 import threading
+import toga_chart
+import numpy as np
 
 def format_number(x) -> str:
     y = str(x).rstrip('0').rstrip('.')
@@ -196,6 +198,7 @@ class ZakatLedger(toga.App):
         print('main_tabs_page')
         self.main_tabs_page_box = toga.OptionContainer(
             content=[
+                (self.i18n.t('main'), self.main_page(), toga.Icon("resources/icon/main.png")),
                 (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
                 (self.i18n.t('transactions'), self.transactions_page(), toga.Icon("resources/icon/transactions.png")),
                 (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("resources/icon/zakat.png")),
@@ -1281,6 +1284,68 @@ class ZakatLedger(toga.App):
             page_items.append((item_number,) + item)  # Include item number with item
 
         return page_items, total_pages, total_items
+
+    ##############################################################################
+    #################################### CHART ###################################
+    ##############################################################################
+    def set_data(self):
+        # Generate some example data
+        self.x = self.mu.value + self.sigma.value * np.random.randn(1000)
+
+    def recreate_data(self, widget):
+        self.set_data()
+        self.chart.redraw()
+
+    def draw_chart(self, chart, figure, *args, **kwargs):
+        num_bins = 50
+
+        # Add a subplot that is a histogram of the data,
+        # using the normal matplotlib API
+        ax = figure.add_subplot(1, 1, 1)
+        n, bins, patches = ax.hist(self.x, num_bins, density=1, range=(0, 200))
+
+        # add a 'best fit' line
+        y = (1 / (np.sqrt(2 * np.pi) * self.sigma.value)) * np.exp(
+            -0.5 * (1 / self.sigma.value * (bins - self.mu.value)) ** 2
+        )
+        ax.plot(bins, y, "--")
+
+        ax.set_xlabel("Value")
+        ax.set_ylabel("Probability density")
+        ax.set_title(
+            rf"Histogram: $\mu={self.mu.value:.1f}$, "
+            rf"$\sigma={self.sigma.value:.1f}$"
+        )
+
+        figure.tight_layout()
+
+    def main_page(self):
+        print('main_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        self.chart = toga_chart.Chart(style=Pack(flex=1), on_draw=self.draw_chart)
+        self.mu = toga.Slider(
+            value=100,
+            min=0,
+            max=200,
+            on_change=self.recreate_data,
+            style=Pack(flex=1),
+        )
+        self.sigma = toga.Slider(
+            value=15,
+            min=1,
+            max=30,
+            on_change=self.recreate_data,
+            style=Pack(flex=1),
+        )
+        page.add(self.chart)
+        page.add(self.mu)
+        page.add(self.sigma)
+        self.set_data()
+        return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
+
+    ##############################################################################
+    #################################### CHART ###################################
+    ##############################################################################
 
     def accounts_page(self):
         print('accounts_page')

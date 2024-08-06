@@ -23,6 +23,7 @@ translations = {
     'on_exit_message': 'هل أنت متأكد أنك تريد الخروج من التطبيق؟',
 
     # main_tabs_page
+    'main': 'الرئيسية',
     'accounts': 'الحسابات',
     'transactions': 'القيود',
     'zakat': 'الزكاة',
