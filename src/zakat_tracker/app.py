@@ -213,6 +213,11 @@ class ZakatLedger(toga.App):
         # transactions_page
         #=======================================================
         self.daily_logs_data = self.db.daily_logs()
+        transactions_tab = self.main_tabs_page_box.content.index(self.main_tabs_page_box.current_tab) == 1
+        print('is transactions_tab?', transactions_tab)
+        if transactions_tab:
+            # move to first tab
+            self.main_tabs_page_box.current_tab = 0
         self.main_tabs_page_box.content.remove(1)
         item = toga.widgets.optioncontainer.OptionItem(
             text=self.i18n.t('transactions'),
@@ -220,6 +225,9 @@ class ZakatLedger(toga.App):
             icon=toga.Icon("resources/icon/transactions.png"),
         )
         self.main_tabs_page_box.content.insert(1, item)
+        if transactions_tab:
+            # go back to transctions tab
+            self.main_tabs_page_box.current_tab = 1
         #=======================================================
         self.refresh_zakat_page()
         finish = ZakatTracker.time()
