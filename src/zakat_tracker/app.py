@@ -28,7 +28,7 @@ def format_number(x) -> str:
         return '0'
     return format(float(y), ',').rstrip('0').rstrip('.')
 
-def trim_with_ellipsis(text, max_length=51):
+def trim_with_ellipsis(text, max_length=39):
     """Trims a string to the specified maximum length, adding ellipsis (...) if truncated."""
     if len(text) <= max_length:
         return text  # No trimming needed
@@ -42,6 +42,18 @@ def dict_details_str(row: dict) -> str:
         i += 1
         result += f'{i}- {k} = {v}\n'
     return result
+
+def strip(text: str) -> str:
+    text = text.strip()
+    for char, pattern in {
+        " ": r"\s{2,}",
+        "\n": r"\n{2,}",
+        "\t": r"\t{2,}",
+        "\r": r"\r{2,}",
+    }.items():
+        text = text.rstrip(char).lstrip(char)
+        text = re.sub(pattern, char, text)
+    return text
 
 class ZakatLedger(toga.App):
     def startup(self):
@@ -1354,7 +1366,7 @@ class ZakatLedger(toga.App):
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     def transaction_row_widget(self, row):
-        text = '=' if row['transfer'] else ('+' if row['value'] > 0 else '-')
+        text = '↔' if row['transfer'] else ('+' if row['value'] > 0 else '-')
         background_color='#4e91fd' if row['transfer'] else ('#30cb00' if row['value'] > 0 else '#FF5252')
         return toga.Box(style=Pack(direction=ROW, text_direction=self.dir), children=[
             toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
@@ -1396,9 +1408,31 @@ class ZakatLedger(toga.App):
                 page.add(self.transaction_row_widget(x))
                 page.add(toga.Divider())
             page.add(toga.Divider())
-        if not self.daily_logs_data['daily']:
-            page.add(self.no_data_widget())
-        return toga.ScrollContainer(content=page, style=Pack(flex=1))
+        if self.daily_logs_data['daily']:
+            buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+            def last(widget):
+                print('last')
+            def next(widget):
+                print('next')
+            def previous(widget):
+                print('previous')
+            def first(widget):
+                print('first')
+            first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            buttons_box.add(first_button)
+            buttons_box.add(previous_button)
+            buttons_box.add(refresh_button)
+            buttons_box.add(next_button)
+            buttons_box.add(last_button)
+            container = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+            container.add(toga.ScrollContainer(content=page, style=Pack(flex=1)))
+            container.add(buttons_box)
+            return toga.ScrollContainer(content=container, style=Pack(flex=1)) if self.android else container
+        return self.no_data_widget()
 
     def history_details_page(self, widget, ref):
         print('history_details_page', ref)
@@ -2384,7 +2418,7 @@ class ZakatLedger(toga.App):
     def exchange(self, widget, account):
         print('exchange', account)
         rate = self.rate_input.value
-        desc = self.desc_input.value
+        desc = strip(self.desc_input.value)
         datetime_value, datetime_missing = self.datetime_value()
         print(f'rate: {rate}')
         print(f'desc: {desc}')
@@ -2415,8 +2449,8 @@ class ZakatLedger(toga.App):
         print('save')
         new_account = self.is_new_account_switch.value
         discount = self.is_discount_switch.value
-        account = self.account_input.value
-        desc = self.desc_input.value
+        account = strip(self.account_input.value)
+        desc = strip(self.desc_input.value)
         amount = self.amount_input.value
         datetime_value, datetime_missing = self.datetime_value()
         print(f'new_account: {new_account}')
@@ -2454,9 +2488,9 @@ class ZakatLedger(toga.App):
 
     def transfer(self, widget):
         print('transfer')
-        from_account = self.from_account_input.value
-        to_account = self.to_account_input.value
-        desc = self.desc_input.value
+        from_account = strip(self.from_account_input.value)
+        to_account = strip(self.to_account_input.value)
+        desc = strip(self.desc_input.value)
         amount = self.amount_input.value
         datetime_value, datetime_missing = self.datetime_value()
         print(f'from_account: {from_account}')
