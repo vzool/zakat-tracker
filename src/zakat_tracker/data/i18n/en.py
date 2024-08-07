@@ -136,6 +136,11 @@ translations = {
     'load_time': 'Time taken for initial startup',
     'refresh_time': 'The time it took for the data to be last updated',
     
+    # charts_page
+    'daily_chart_label': 'Total Daily Transactions',
+    'income': 'Income',
+    'expenses': 'Expenses',
+
     # settings_page
     'language': 'Language',
     'lang_note': 'After changing the language please close the application and open it again',

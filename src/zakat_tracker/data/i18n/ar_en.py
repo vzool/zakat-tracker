@@ -148,6 +148,11 @@ translations = {
     'zakat_library_version': 'رقم نسخة مكتبة الزكاة',
     'gui_version': 'رقم نسخة مكتبة الواجهات الرسومية للمستخدم',
     'app_version': 'رقم نسخة التطبيق',
+
+    # charts_page
+    'daily_chart_label': 'إجمالي القيود اليومية',
+    'income': 'الدخل',
+    'expenses': 'الصرف',
     
     # accounts_page 
     'add': 'إضافة (Add)',

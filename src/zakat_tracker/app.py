@@ -197,7 +197,7 @@ class ZakatLedger(toga.App):
         print('main_tabs_page')
         self.main_tabs_page_box = toga.OptionContainer(
             content=[
-                (self.i18n.t('main'), self.main_page(), toga.Icon("resources/icon/main.png")),
+                (self.i18n.t('main'), self.charts_page(), toga.Icon("resources/icon/main.png")),
                 (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
                 (self.i18n.t('transactions'), self.transactions_page(), toga.Icon("resources/icon/transactions.png")),
                 (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("resources/icon/zakat.png")),
@@ -1289,8 +1289,8 @@ class ZakatLedger(toga.App):
     #################################### CHART ###################################
     ##############################################################################
 
-    def main_page(self):
-        print('main_page')
+    def charts_page(self):
+        print('charts_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         def draw_daily_chart(chart, figure, *args, **kwargs):
 
@@ -1315,9 +1315,9 @@ class ZakatLedger(toga.App):
             index = range(len(dates))
 
             # Grouped bars (positive, negative, and total)
-            bars_pos = ax.bar(index, positive_values, bar_width, label='Positive', color='#30cb00')
-            bars_neg = ax.bar([x + bar_width for x in index], negative_values, bar_width, label='Negative', color='#FF5252')
-            bars_total = ax.bar([x + 2 * bar_width for x in index], total_values, bar_width, label='Total', color='#4e91fd')
+            bars_pos = ax.bar(index, positive_values, bar_width, label=self.i18n.t('income'), color='#30cb00')
+            bars_neg = ax.bar([x + bar_width for x in index], negative_values, bar_width, label=self.i18n.t('expenses'), color='#FF5252')
+            bars_total = ax.bar([x + 2 * bar_width for x in index], total_values, bar_width, label=self.i18n.t('total'), color='#4e91fd')
 
             # Add labels to the bars
             for bar in bars_pos + bars_neg + bars_total:
@@ -1328,9 +1328,9 @@ class ZakatLedger(toga.App):
                             textcoords="offset points",
                             ha='center', va='bottom')
             # Customization
-            ax.set_xlabel('Dates')
-            ax.set_ylabel('Values')
-            ax.set_title('Grouped Bar Chart with Positive/Negative/Total Values')
+            ax.set_xlabel(self.i18n.t('date'))
+            ax.set_ylabel(self.i18n.t('value'))
+            ax.set_title(self.i18n.t('daily_chart_label'))
             ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
             ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
             ax.legend()

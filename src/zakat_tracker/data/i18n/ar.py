@@ -135,6 +135,11 @@ translations = {
     'database_file_size': 'حجم ملف قاعدة البيانات',
     'load_time': 'الوقت المستغرق للتحميل المبدئي',
     'refresh_time': 'الوقت المستغرق  لآخر تحديث للبيانات',
+
+    # charts_page
+    'daily_chart_label': 'إجمالي القيود اليومية',
+    'income': 'الدخل',
+    'expenses': 'الصرف',
     
     # settings_page
     'language': 'اللغة',
