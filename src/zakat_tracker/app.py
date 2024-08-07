@@ -1288,63 +1288,59 @@ class ZakatLedger(toga.App):
     ##############################################################################
     #################################### CHART ###################################
     ##############################################################################
-    
-    def draw_chart(self, chart, figure, *args, **kwargs):
-
-        # Add a subplot that is a histogram of the data,
-        # using the normal matplotlib API
-        ax = figure.add_subplot()
-        data = {
-            k: (
-                self.db.unscale(v['positive']),
-                self.db.unscale(v['negative']),
-                self.db.unscale(v['total']),
-            ) for k,v in self.daily_logs_data['daily'].items()
-        }
-        print('data', data)
-
-        dates = list(data.keys())
-        positive_values = [v[0] for v in data.values()]
-        negative_values = [v[1] for v in data.values()]
-        total_values = [v[2] for v in data.values()]
-
-        bar_width = 0.25
-        index = range(len(dates))
-
-        # Grouped bars (positive, negative, and total)
-        bars_pos = ax.bar(index, positive_values, bar_width, label='Positive', color='#30cb00')
-        bars_neg = ax.bar([x + bar_width for x in index], negative_values, bar_width, label='Negative', color='#FF5252')
-        bars_total = ax.bar([x + 2 * bar_width for x in index], total_values, bar_width, label='Total', color='#4e91fd')
-
-        # Add labels to the bars
-        for bar in bars_pos + bars_neg + bars_total:
-            height = bar.get_height()
-            ax.annotate(f'{height}',
-                        xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom')
-
-        # Customization
-        ax.set_xlabel('Dates')
-        ax.set_ylabel('Values')
-        ax.set_title('Grouped Bar Chart with Positive/Negative/Total Values')
-        ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
-        ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
-        ax.legend()
-
-        figure.tight_layout()
 
     def main_page(self):
         print('main_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        self.chart = toga_chart.Chart(style=Pack(flex=1), on_draw=self.draw_chart)
-        page.add(self.chart)
-        def update(widget):
-            print('update')
-            self.refresh(widget)
-            self.chart.redraw()
-        refresh_button = toga.Button(self.i18n.t('refresh'), on_press=update, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        def draw_daily_chart(chart, figure, *args, **kwargs):
+
+            # Add a subplot that is a histogram of the data,
+            # using the normal matplotlib API
+            ax = figure.add_subplot()
+            data = {
+                k: (
+                    self.db.unscale(v['positive']),
+                    self.db.unscale(v['negative']),
+                    self.db.unscale(v['total']),
+                ) for k,v in self.daily_logs_data['daily'].items()
+            }
+            print('data', data)
+
+            dates = list(data.keys())
+            positive_values = [v[0] for v in data.values()]
+            negative_values = [v[1] for v in data.values()]
+            total_values = [v[2] for v in data.values()]
+
+            bar_width = 0.25
+            index = range(len(dates))
+
+            # Grouped bars (positive, negative, and total)
+            bars_pos = ax.bar(index, positive_values, bar_width, label='Positive', color='#30cb00')
+            bars_neg = ax.bar([x + bar_width for x in index], negative_values, bar_width, label='Negative', color='#FF5252')
+            bars_total = ax.bar([x + 2 * bar_width for x in index], total_values, bar_width, label='Total', color='#4e91fd')
+
+            # Add labels to the bars
+            for bar in bars_pos + bars_neg + bars_total:
+                height = bar.get_height()
+                ax.annotate(f'{height}',
+                            xy=(bar.get_x() + bar.get_width() / 2, height),
+                            xytext=(0, 3),  # 3 points vertical offset
+                            textcoords="offset points",
+                            ha='center', va='bottom')
+            # Customization
+            ax.set_xlabel('Dates')
+            ax.set_ylabel('Values')
+            ax.set_title('Grouped Bar Chart with Positive/Negative/Total Values')
+            ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
+            ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
+            ax.legend()
+            figure.tight_layout()
+        self.daily_chart = toga_chart.Chart(style=Pack(flex=1), on_draw=draw_daily_chart)
+        page.add(self.daily_chart)
+        def update_charts(widget):
+            print('update_charts')
+            self.daily_chart.redraw()
+        refresh_button = toga.Button(self.i18n.t('refresh'), on_press=update_charts, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         page.add(refresh_button)
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
