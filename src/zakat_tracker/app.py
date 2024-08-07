@@ -95,15 +95,82 @@ class ZakatLedger(toga.App):
             )
             return False
         self.on_exit = on_exit
+
+        if self.config.get('lang') == Lang.AR_EN.value:
+            self.select_your_language_page()
+            return
+        self.main()
+
+    def main(self):
         self.main_window = toga.MainWindow(
             title=self.i18n.t('formal_name'),
             size=(800, 600),
         )
-
         self._original_title = self.main_window.title
         self.main_window.content = self.loading_page(self)
         self.main_window.show()
+        self.load_database()
 
+    def select_your_language_page(self):
+        print('select_your_language_page')
+        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        self.main_window = toga.MainWindow(
+            title=self.i18n.t('formal_name'),
+            size=(800, 600),
+        )
+        page.add(toga.Label(self.i18n.t('select_your_language'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, padding_top=45, text_direction=self.dir)))
+
+        lang_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir))
+        lang_label = toga.Label(self.i18n.t('language'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        lang_selection = toga.Selection(
+            items=[lang.value for lang in Lang],
+            value=self.config.get('lang', Lang.AR_EN.value),
+            on_change=lambda e: self.config.set('lang', e.value),
+            style=Pack(text_direction=self.dir)
+        )
+        lang_box.add(lang_label)
+        lang_box.add(lang_selection)
+
+        page.add(toga.Divider())
+        page.add(toga.ImageView("resources/background/world-languages.png", style=Pack(flex=1, alignment='center')))
+        page.add(toga.Divider())
+        page.add(lang_box)
+        def select_language(widget):
+            print('select_language')
+            self.load_config()
+            self.load_translations()
+            self.main_window.close()
+            self.main()
+        page.add(toga.Divider())
+        page.add(toga.Button(self.i18n.t('select'), on_press=select_language, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, padding_bottom=30, text_direction=self.dir)))
+        self.main_window.content = page
+        self.main_window.show()
+
+    def format_time(self, diff: int):
+        return ZakatTracker.duration_from_nanoseconds(
+            diff,
+            spoken_time_separator = self.i18n.t('spoken_time_separator'),
+            millennia = self.i18n.t('millennia'),
+            century = self.i18n.t('century'),
+            years = self.i18n.t('years'),
+            days = self.i18n.t('days'),
+            hours = self.i18n.t('hours'),
+            minutes = self.i18n.t('minutes'),
+            seconds = self.i18n.t('seconds'),
+            milli_seconds = self.i18n.t('milliSeconds'),
+            micro_seconds = self.i18n.t('microSeconds'),
+            nano_seconds = self.i18n.t('nanoSeconds'),
+        )
+
+    def title(self, text: str = None):
+        if text:
+            self.main_window.title = f'{self._original_title} - {text}'
+        else:
+            self.main_window.title = self._original_title
+
+    # loaders
+
+    def load_database(self):
         async def load_task(widget, **kwargs):
             #----------------------------------
             ########### TASK THREAD ###########
@@ -140,30 +207,6 @@ class ZakatLedger(toga.App):
             print(self.load_time)
         self.add_background_task(load_task)
 
-    def format_time(self, diff: int):
-        return ZakatTracker.duration_from_nanoseconds(
-            diff,
-            spoken_time_separator = self.i18n.t('spoken_time_separator'),
-            millennia = self.i18n.t('millennia'),
-            century = self.i18n.t('century'),
-            years = self.i18n.t('years'),
-            days = self.i18n.t('days'),
-            hours = self.i18n.t('hours'),
-            minutes = self.i18n.t('minutes'),
-            seconds = self.i18n.t('seconds'),
-            milli_seconds = self.i18n.t('milliSeconds'),
-            micro_seconds = self.i18n.t('microSeconds'),
-            nano_seconds = self.i18n.t('nanoSeconds'),
-        )
-
-    def title(self, text: str = None):
-        if text:
-            self.main_window.title = f'{self._original_title} - {text}'
-        else:
-            self.main_window.title = self._original_title
-
-    # loaders
-
     def load_config(self):
         if not os.path.exists(self.paths.config):
             pathlib.Path.mkdir(self.paths.config)
@@ -192,9 +235,6 @@ class ZakatLedger(toga.App):
         self.text_end = self.i18n.t('text_end', 'left')
 
     # pages
-
-    def select_your_language_page(self):
-        print('select_your_language_page')
 
     def main_tabs_page(self):
         print('main_tabs_page')

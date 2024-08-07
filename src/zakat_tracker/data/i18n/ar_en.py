@@ -18,6 +18,10 @@ translations = {
     'microSeconds': 'مايكرو ثانية',
     'nanoSeconds': 'نانو ثانية',
 
+    # select_your_language_page
+    'select_your_language': 'اختر لغتك المفضلة - Choose Your Preferred Language',
+    'select': 'اختر - Choose',
+
     # startup
     'on_exit_title': 'تأكيد الخروج (Exit Confirmation)',
     'on_exit_message': 'هل أنت متأكد أنك تريد الخروج من التطبيق؟',
