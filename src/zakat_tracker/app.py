@@ -250,10 +250,11 @@ class ZakatLedger(toga.App):
         )
         self.main_window.content = self.main_tabs_page_box
 
-    def refresh(self, widget):
+    def refresh(self, widget, transactions_page_only = False):
         print('refresh')
         start = ZakatTracker.time()
-        self.update_accounts(widget)
+        if not transactions_page_only:
+            self.update_accounts(widget)
         #=======================================================
         # transactions_page
         #=======================================================
@@ -275,7 +276,8 @@ class ZakatLedger(toga.App):
             # go back to transctions tab
             self.main_tabs_page_box.current_tab = tab_index
         #=======================================================
-        self.refresh_zakat_page()
+        if not transactions_page_only:
+            self.refresh_zakat_page()
         finish = ZakatTracker.time()
         self.refresh_time = self.format_time(finish - start)
         print(self.refresh_time)
@@ -1608,37 +1610,83 @@ class ZakatLedger(toga.App):
             ),
         ])
 
+    def transactions_box_items(self):
+        if self.transactions_box_data is None:
+            self.transactions_box_data = [(k, v) for k,v in self.daily_logs_data['daily'].items()]
+        chunk, self.transactions_box_total_pages, self.transactions_box_total_items = self.paginate(
+            self.transactions_box_data,
+            self.transactions_box_items_per_page,
+            self.transactions_box_current_page,
+        )
+        self.transactions_box_pagination_label.text = self.i18n.t('table_pagination_label').format(
+            format_number(self.transactions_box_total_items),
+            format_number(self.transactions_box_items_per_page),
+            format_number(self.transactions_box_current_page),
+            format_number(self.transactions_box_total_pages),
+        )
+        return chunk
+
     def transactions_page(self):
         print('transactions_page')
-        page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        for date_str, v in self.daily_logs_data['daily'].items():
-            date = datetime.strptime(date_str, '%Y-%m-%d')
-            weekday = self.i18n.t(date.strftime("%A").lower())
-            page.add(toga.Box(
-                style=Pack(direction=ROW, text_direction=self.dir, background_color="#CCCCCC"),
-                children=[
-                    toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
-                    toga.Label(format_number(self.db.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
-                ],
-            ))
-            page.add(toga.Divider())
-            for x in v['rows']:
-                page.add(self.transaction_row_widget(x))
-                page.add(toga.Divider())
-            page.add(toga.Divider())
+        self.transactions_box_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
+        if not hasattr(self, 'transactions_box_data'):
+            self.transactions_box_data = None
+            self.transactions_box_current_page = 1
+        self.transactions_box_items_per_page = 7
+        def generate_boxes():
+            print('generate_boxes')
+            transactions_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+            for sn, date_str, v in self.transactions_box_items():
+                print(sn, date_str)
+                date = datetime.strptime(date_str, '%Y-%m-%d')
+                weekday = self.i18n.t(date.strftime("%A").lower())
+                transactions_box.add(toga.Box(
+                    style=Pack(direction=ROW, text_direction=self.dir, background_color="#CCCCCC"),
+                    children=[
+                        toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
+                        toga.Label(format_number(self.db.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
+                    ],
+                ))
+                transactions_box.add(toga.Divider())
+                for x in v['rows']:
+                    transactions_box.add(self.transaction_row_widget(x))
+                    transactions_box.add(toga.Divider())
+            self.transactions_box = transactions_box
+        generate_boxes()
         if self.daily_logs_data['daily']:
             buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
             def last(widget):
-                print('last')
+                print('last')        
+                if self.transactions_box_current_page == self.transactions_box_total_pages:
+                    return
+                self.transactions_box_current_page = self.transactions_box_total_pages
+                self.refresh(widget, transactions_page_only=True)
             def next(widget):
                 print('next')
+                if self.transactions_box_current_page < self.transactions_box_total_pages:
+                    self.transactions_box_current_page += 1
+                    self.refresh(widget, transactions_page_only=True)
             def previous(widget):
                 print('previous')
+                if self.transactions_box_current_page > 1:
+                    self.transactions_box_current_page -= 1
+                    self.refresh(widget, transactions_page_only=True)
             def first(widget):
                 print('first')
+                if self.transactions_box_current_page == 1:
+                    return
+                self.transactions_box_current_page = 1
+                self.refresh(widget, transactions_page_only=True)
+            def refresh(widget):
+                self.transactions_box_data = None
+                self.transactions_box_current_page = 1
+                self.refresh(widget, transactions_page_only=True)
             first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
             previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-            refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+            refresh_button = toga.Button(self.i18n.t('refresh'), on_press=refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
             next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
             last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
             buttons_box.add(first_button)
@@ -1647,7 +1695,10 @@ class ZakatLedger(toga.App):
             buttons_box.add(next_button)
             buttons_box.add(last_button)
             container = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-            container.add(toga.ScrollContainer(content=page, style=Pack(flex=1)))
+            container.add(self.transactions_box_pagination_label)
+            container.add(toga.Divider())
+            container.add(toga.ScrollContainer(content=self.transactions_box, style=Pack(flex=1)))
+            container.add(toga.Divider())
             container.add(buttons_box)
             return toga.ScrollContainer(content=container, style=Pack(flex=1)) if self.android else container
         return self.no_data_widget()
