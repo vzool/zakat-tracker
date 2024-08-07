@@ -1288,27 +1288,50 @@ class ZakatLedger(toga.App):
     ##############################################################################
     #################################### CHART ###################################
     ##############################################################################
-    def set_data(self):
-        # Generate some example data
-        pass
-        # self.x = self.mu.value + self.sigma.value * np.random.randn(1000)
-
-    def recreate_data(self, widget):
-        self.set_data()
-        self.chart.redraw()
-
+    
     def draw_chart(self, chart, figure, *args, **kwargs):
 
         # Add a subplot that is a histogram of the data,
         # using the normal matplotlib API
         ax = figure.add_subplot()
-        data = {k: (v['positive'], v['negative'], v['total']) for k,v in self.daily_logs_data['daily'].items()}
-        width = 0.6  # the width of the bars: can also be len(x) sequence
-        print("self.daily_logs_data['daily']", data)
+        data = {
+            k: (
+                self.db.unscale(v['positive']),
+                self.db.unscale(v['negative']),
+                self.db.unscale(v['total']),
+            ) for k,v in self.daily_logs_data['daily'].items()
+        }
+        print('data', data)
 
-        for k,v in data.items():
-            p = ax.bar(data.keys(), v, width, label=k)
-            ax.bar_label(p, label_type='center')
+        dates = list(data.keys())
+        positive_values = [v[0] for v in data.values()]
+        negative_values = [v[1] for v in data.values()]
+        total_values = [v[2] for v in data.values()]
+
+        bar_width = 0.25
+        index = range(len(dates))
+
+        # Grouped bars (positive, negative, and total)
+        bars_pos = ax.bar(index, positive_values, bar_width, label='Positive', color='#30cb00')
+        bars_neg = ax.bar([x + bar_width for x in index], negative_values, bar_width, label='Negative', color='#FF5252')
+        bars_total = ax.bar([x + 2 * bar_width for x in index], total_values, bar_width, label='Total', color='#4e91fd')
+
+        # Add labels to the bars
+        for bar in bars_pos + bars_neg + bars_total:
+            height = bar.get_height()
+            ax.annotate(f'{height}',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom')
+
+        # Customization
+        ax.set_xlabel('Dates')
+        ax.set_ylabel('Values')
+        ax.set_title('Grouped Bar Chart with Positive/Negative/Total Values')
+        ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
+        ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
+        ax.legend()
 
         figure.tight_layout()
 
@@ -1316,24 +1339,13 @@ class ZakatLedger(toga.App):
         print('main_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         self.chart = toga_chart.Chart(style=Pack(flex=1), on_draw=self.draw_chart)
-        self.mu = toga.Slider(
-            value=100,
-            min=0,
-            max=200,
-            on_change=self.recreate_data,
-            style=Pack(flex=1),
-        )
-        self.sigma = toga.Slider(
-            value=15,
-            min=1,
-            max=30,
-            on_change=self.recreate_data,
-            style=Pack(flex=1),
-        )
         page.add(self.chart)
-        page.add(self.mu)
-        page.add(self.sigma)
-        self.set_data()
+        def update(widget):
+            print('update')
+            self.refresh(widget)
+            self.chart.redraw()
+        refresh_button = toga.Button(self.i18n.t('refresh'), on_press=update, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        page.add(refresh_button)
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     ##############################################################################
