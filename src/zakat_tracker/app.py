@@ -193,6 +193,9 @@ class ZakatLedger(toga.App):
 
     # pages
 
+    def select_your_language_page(self):
+        print('select_your_language_page')
+
     def main_tabs_page(self):
         print('main_tabs_page')
         self.main_tabs_page_box = toga.OptionContainer(
