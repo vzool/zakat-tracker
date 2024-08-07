@@ -139,7 +139,7 @@ class ZakatLedger(toga.App):
             print('select_language')
             self.load_config()
             self.load_translations()
-            self.main_window.close()
+            self.main_window.content = toga.Box()
             self.main()
         page.add(toga.Divider())
         page.add(toga.Button(self.i18n.t('select'), on_press=select_language, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, padding_bottom=30, text_direction=self.dir)))
@@ -1471,17 +1471,21 @@ class ZakatLedger(toga.App):
             figure.tight_layout()
         self.yearly_chart = toga_chart.Chart(style=Pack(flex=1), on_draw=draw_yearly_chart)
 
-        page.add(self.daily_chart)
-        page.add(self.monthly_chart)
-        page.add(self.yearly_chart)
-
         def update_charts(widget):
             print('update_charts')
             self.daily_chart.redraw()
             self.monthly_chart.redraw()
             self.yearly_chart.redraw()
         refresh_button = toga.Button(self.i18n.t('refresh'), on_press=update_charts, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+
         page.add(refresh_button)
+        page.add(toga.Divider())
+        page.add(self.daily_chart)
+        page.add(toga.Divider())
+        page.add(self.monthly_chart)
+        page.add(toga.Divider())
+        page.add(self.yearly_chart)
+        page.add(toga.Divider())
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     ###############################################################################
