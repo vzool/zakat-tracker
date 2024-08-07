@@ -140,6 +140,8 @@ translations = {
     'daily_chart_label': 'Total Daily Transactions',
     'income': 'Income',
     'expenses': 'Expenses',
+    'monthly_chart_label': 'Total Monthly Transactions',
+    'yearly_chart_label': 'Total Yearly Transactions',
 
     # settings_page
     'language': 'Language',

@@ -140,6 +140,8 @@ translations = {
     'daily_chart_label': 'إجمالي القيود اليومية',
     'income': 'الدخل',
     'expenses': 'الصرف',
+    'monthly_chart_label': 'إجمالي القيود الشهرية',
+    'yearly_chart_label': 'إجمالي القيود السنوية',
     
     # settings_page
     'language': 'اللغة',
