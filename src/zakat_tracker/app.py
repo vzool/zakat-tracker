@@ -202,6 +202,10 @@ class ZakatLedger(toga.App):
                     str(self.thread_exception) + '\n' + self.coloned_time,
                 )
             self.main_tabs_page()
+            # -------- Update UI --------
+            await asyncio.sleep(1)
+            self.refresh(widget)
+            # -------- Update UI --------
             self.finish_time = time_ns()
             self.load_time = self.format_time(self.finish_time - start_time)
             print(self.load_time)
