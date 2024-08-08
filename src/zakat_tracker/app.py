@@ -1646,7 +1646,8 @@ class ZakatLedger(toga.App):
                 transactions_box.add(toga.Box(
                     style=Pack(direction=ROW, text_direction=self.dir, background_color="#CCCCCC"),
                     children=[
-                        toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
+                        toga.Label(f'{sn:02d}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
+                        toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align='center', font_weight='bold')),
                         toga.Label(format_number(self.db.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
                     ],
                 ))
