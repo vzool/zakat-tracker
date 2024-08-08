@@ -174,6 +174,7 @@ translations = {
     'no': 'لا',
 
     # transactions_page
+    'keyword': 'كلمة للبحث',
     'saturday': 'السبت',
     'sunday': 'الأحد',
     'monday': 'الإثنين',

@@ -170,6 +170,7 @@ translations = {
     'no': 'No',
 
     # transactions_page
+    'keyword': 'Keyword',
     'saturday': 'Saturday',
     'sunday': 'Sunday',
     'monday': 'Monday',
