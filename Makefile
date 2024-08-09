@@ -27,7 +27,6 @@ update:
 # deploy android
 android:
 	rm -rf build/zakat-tracker/android
-	cp publish/android/debug.keystore ~/.android/debug.keystore 
 	mkdir -p dist
 	briefcase create android
 	git stash push -m "deploy"

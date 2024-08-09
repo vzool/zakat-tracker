@@ -179,6 +179,19 @@ build_gradle_dependencies = [
     # "org.osmdroid:osmdroid-android:6.1.0",
 ]
 
+build_gradle_extra_content = """\
+android {
+    signingConfigs {
+        debug {
+            keyAlias "android-debug-key"
+            keyPassword "zakat-tracker"
+            storePassword "zakat-tracker"
+            storeFile file("../../../../../publish/android/debug.keystore")
+        }
+    }
+}
+"""
+
 # Web deployments
 [tool.briefcase.app.zakat-tracker.web]
 requires = [
