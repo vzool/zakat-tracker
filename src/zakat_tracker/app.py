@@ -66,10 +66,6 @@ class ZakatLedger(toga.App):
         self.os = toga.platform.current_platform.lower()
         self.datetime_supported = self.os in ['android', 'windows']
         self.android = self.os == 'android'
-        self.stats = {
-            'database': (0, 0),
-            'ram': (0, 0),
-        }
         print(f'platfom: {self.os} - datetime_supported: {self.datetime_supported}')
         print(f'Zakat Version: {ZakatTracker.Version()}')
         print(f'App Version: {self.version}')
@@ -77,6 +73,7 @@ class ZakatLedger(toga.App):
         self.db_path = os.path.join(self.paths.data, 'zakat_db', 'zakat.camel')
         print(f'db: {self.db_path}')
         self.db = ZakatTracker(self.db_path)
+        self.stats = self.db.stats_init()
 
         self.load_config()
         self.load_translations()
@@ -146,28 +143,6 @@ class ZakatLedger(toga.App):
         self.main_window.content = page
         self.main_window.show()
 
-    def format_time(self, diff: int):
-        return ZakatTracker.duration_from_nanoseconds(
-            diff,
-            spoken_time_separator = self.i18n.t('spoken_time_separator'),
-            millennia = self.i18n.t('millennia'),
-            century = self.i18n.t('century'),
-            years = self.i18n.t('years'),
-            days = self.i18n.t('days'),
-            hours = self.i18n.t('hours'),
-            minutes = self.i18n.t('minutes'),
-            seconds = self.i18n.t('seconds'),
-            milli_seconds = self.i18n.t('milliSeconds'),
-            micro_seconds = self.i18n.t('microSeconds'),
-            nano_seconds = self.i18n.t('nanoSeconds'),
-        )
-
-    def title(self, text: str = None):
-        if text:
-            self.main_window.title = f'{self._original_title} - {text}'
-        else:
-            self.main_window.title = self._original_title
-
     # loaders
 
     def load_database(self):
@@ -181,8 +156,7 @@ class ZakatLedger(toga.App):
                     self.daily_logs_data = self.db.daily_logs_init()
                     self.db.load()
                     self.daily_logs_data = self.db.daily_logs()
-                    if self.config_calculating_database_stats_on_startup:
-                        self.stats = self.db.stats()
+                    self.stats = self.db.stats(ignore_ram=not self.config_calculating_database_stats_on_startup)
                 except Exception as e:
                     print(e)
                     self.thread_exception = e
@@ -222,7 +196,7 @@ class ZakatLedger(toga.App):
         self.config_silver_gram_price_in_local_currency = self.config.get('silver_gram_price_in_local_currency', 2.17)
         self.config_silver_nisab_gram_quantity = self.config.get('silver_nisab_gram_quantity', 595)
         self.config_haul_time_cycle_in_days = self.config.get('haul_time_cycle_in_days', 355)
-        self.config_calculating_database_stats_on_startup = self.config.get('calculating_database_stats_on_startup', True)
+        self.config_calculating_database_stats_on_startup = self.config.get('calculating_database_stats_on_startup', False)
         self.config_create_database_file_snapshot_before_any_recovery = self.config.get('create_database_file_snapshot_before_any_recovery', True)
 
         self.nisab = self.config_silver_gram_price_in_local_currency * self.config_silver_nisab_gram_quantity
@@ -3000,6 +2974,28 @@ class ZakatLedger(toga.App):
         )
 
     # transformers
+
+    def format_time(self, diff: int):
+        return ZakatTracker.duration_from_nanoseconds(
+            diff,
+            spoken_time_separator = self.i18n.t('spoken_time_separator'),
+            millennia = self.i18n.t('millennia'),
+            century = self.i18n.t('century'),
+            years = self.i18n.t('years'),
+            days = self.i18n.t('days'),
+            hours = self.i18n.t('hours'),
+            minutes = self.i18n.t('minutes'),
+            seconds = self.i18n.t('seconds'),
+            milli_seconds = self.i18n.t('milliSeconds'),
+            micro_seconds = self.i18n.t('microSeconds'),
+            nano_seconds = self.i18n.t('nanoSeconds'),
+        )
+
+    def title(self, text: str = None):
+        if text:
+            self.main_window.title = f'{self._original_title} - {text}'
+        else:
+            self.main_window.title = self._original_title
 
     def row_details_str(self, headings, row: toga.sources.list_source.Row):
         result = ''
