@@ -1489,7 +1489,27 @@ class ZakatLedger(toga.App):
             self.i18n.t('table_pagination_label'),
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
         )
+        search_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def search_input_on_change(widget):
+            print('search_input_on_change', widget.value)
+            self.accounts_table_keyword = widget.value
+        search_input = toga.TextInput(
+            value=self.accounts_table_keyword if hasattr(self, 'accounts_table_keyword') else '',
+            placeholder=self.i18n.t('keyword'),
+            on_change=search_input_on_change,
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+        def search(widget):
+            print('search')
+            if self.accounts_table_keyword == self.accounts_table_last_keyword:
+                return
+            self.update_accounts(widget)
+        search_button = toga.Button('🔍', on_press=search, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        search_box.add(search_input)
+        search_box.add(search_button)
         self.accounts_table_data = None
+        self.accounts_table_keyword = ''
+        self.accounts_table_last_keyword = ''
         self.accounts_table_current_page = 1
         self.accounts_table_items_per_page = 13
         self.accounts_table = toga.Table(
@@ -1524,6 +1544,8 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
         page.add(self.accounts_table_pagination_label)
+        page.add(toga.Divider())
+        page.add(search_box)
         page.add(toga.Divider())
         page.add(self.accounts_table)
 
@@ -1616,13 +1638,13 @@ class ZakatLedger(toga.App):
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
         )
         search_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
-        def transactions_search_inputt_on_change(widget):
-            print('transactions_search_inputt_on_change', widget.value)
+        def search_input_on_change(widget):
+            print('search_input_on_change', widget.value)
             self.transactions_box_keyword = widget.value
-        self.transactions_search_input = toga.TextInput(
+        search_input = toga.TextInput(
             value=self.transactions_box_keyword if hasattr(self, 'transactions_box_keyword') else '',
             placeholder=self.i18n.t('keyword'),
-            on_change=transactions_search_inputt_on_change,
+            on_change=search_input_on_change,
             style=Pack(flex=1, text_direction=self.dir),
         )
         def search(widget):
@@ -1631,7 +1653,7 @@ class ZakatLedger(toga.App):
                 return
             self.refresh(widget, transactions_page_only=True)
         search_button = toga.Button('🔍', on_press=search, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        search_box.add(self.transactions_search_input)
+        search_box.add(search_input)
         search_box.add(search_button)
         if not hasattr(self, 'transactions_box_data'):
             self.transactions_box_data = None
@@ -1850,7 +1872,27 @@ class ZakatLedger(toga.App):
             self.i18n.t('table_pagination_label'),
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
         )
+        search_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def search_input_on_change(widget):
+            print('search_input_on_change', widget.value)
+            self.boxes_table_keyword = widget.value
+        search_input = toga.TextInput(
+            value=self.boxes_table_keyword if hasattr(self, 'boxes_table_keyword') else '',
+            placeholder=self.i18n.t('keyword'),
+            on_change=search_input_on_change,
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+        def search(widget):
+            print('search')
+            if self.boxes_table_keyword == self.boxes_table_last_keyword:
+                return
+            self.update_boxes(widget, account)
+        search_button = toga.Button('🔍', on_press=search, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        search_box.add(search_input)
+        search_box.add(search_button)
         self.boxes_table_data = None
+        self.boxes_table_keyword = ''
+        self.boxes_table_last_keyword = ''
         self.boxes_table_current_page = 1
         self.boxes_table_items_per_page = 13
         # id, capital, count, last, rest, total
@@ -1878,6 +1920,8 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
         page.add(self.boxes_table_pagination_label)
+        page.add(toga.Divider())
+        page.add(search_box)
         page.add(toga.Divider())
         page.add(self.boxes_table)
 
@@ -1925,7 +1969,27 @@ class ZakatLedger(toga.App):
             self.i18n.t('table_pagination_label'),
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
         )
+        search_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def search_input_on_change(widget):
+            print('search_input_on_change', widget.value)
+            self.logs_table_keyword = widget.value
+        search_input = toga.TextInput(
+            value=self.logs_table_keyword if hasattr(self, 'logs_table_keyword') else '',
+            placeholder=self.i18n.t('keyword'),
+            on_change=search_input_on_change,
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+        def search(widget):
+            print('search')
+            if self.logs_table_keyword == self.logs_table_last_keyword:
+                return
+            self.update_logs(widget, account)
+        search_button = toga.Button('🔍', on_press=search, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        search_box.add(search_input)
+        search_box.add(search_button)
         self.logs_table_data = None
+        self.logs_table_keyword = ''
+        self.logs_table_last_keyword = ''
         self.logs_table_current_page = 1
         self.logs_table_items_per_page = 13
         # id, value, desc
@@ -1950,6 +2014,8 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
         page.add(self.logs_table_pagination_label)
+        page.add(toga.Divider())
+        page.add(search_box)
         page.add(toga.Divider())
         page.add(self.logs_table)
 
@@ -2003,7 +2069,27 @@ class ZakatLedger(toga.App):
             self.i18n.t('table_pagination_label'),
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
         )
+        search_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def search_input_on_change(widget):
+            print('search_input_on_change', widget.value)
+            self.exchanges_table_keyword = widget.value
+        search_input = toga.TextInput(
+            value=self.exchanges_table_keyword if hasattr(self, 'exchanges_table_keyword') else '',
+            placeholder=self.i18n.t('keyword'),
+            on_change=search_input_on_change,
+            style=Pack(flex=1, text_direction=self.dir),
+        )
+        def search(widget):
+            print('search')
+            if self.exchanges_table_keyword == self.exchanges_table_last_keyword:
+                return
+            self.update_exchanges(widget, account)
+        search_button = toga.Button('🔍', on_press=search, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        search_box.add(search_input)
+        search_box.add(search_button)
         self.exchanges_table_data = None
+        self.exchanges_table_keyword = ''
+        self.exchanges_table_last_keyword = ''
         self.exchanges_table_current_page = 1
         self.exchanges_table_items_per_page = 13
         # id, rate, description
@@ -2030,6 +2116,8 @@ class ZakatLedger(toga.App):
         page.add(self.label_note_widget(self.i18n.t('table_show_row_details_note')))
         page.add(toga.Divider())
         page.add(self.exchanges_table_pagination_label)
+        page.add(toga.Divider())
+        page.add(search_box)
         page.add(toga.Divider())
         page.add(self.exchanges_table)
 
@@ -2138,15 +2226,21 @@ class ZakatLedger(toga.App):
         return chunk
 
     def accounts_table_items(self):
-        if self.accounts_table_data is None:
-            self.accounts_table_data = [(
-                k,
-                format_number(ZakatTracker.unscale(v)),
-                self.db.box_size(k),
-                self.db.log_size(k),
-                self.i18n.t('yes') if self.db.hide(k) else self.i18n.t('no'),
-                self.i18n.t('yes') if self.db.zakatable(k) else self.i18n.t('no'),
-            ) for k,v in self.db.accounts().items() if not self.db.hide(k) or self.config_show_hidden_accounts]
+        keyword = self.accounts_table_keyword if hasattr(self, 'accounts_table_keyword') else ''
+        if self.accounts_table_data is None or keyword or self.accounts_table_last_keyword:
+            self.accounts_table_data = [
+                (
+                    k,
+                    format_number(ZakatTracker.unscale(v)),
+                    self.db.box_size(k),
+                    self.db.log_size(k),
+                    self.i18n.t('yes') if self.db.hide(k) else self.i18n.t('no'),
+                    self.i18n.t('yes') if self.db.zakatable(k) else self.i18n.t('no'),
+                )
+                for k,v in self.db.accounts().items()
+                if (not self.db.hide(k) or self.config_show_hidden_accounts) and keyword in f'{k}{v}'
+            ]
+            self.accounts_table_last_keyword = keyword
         chunk, self.accounts_table_total_pages, self.accounts_table_total_items = self.paginate(
             self.accounts_table_data,
             self.accounts_table_items_per_page,
@@ -2161,15 +2255,21 @@ class ZakatLedger(toga.App):
         return chunk
 
     def boxes_table_items(self, account: str):
-        if self.boxes_table_data is None:
-            self.boxes_table_data = [(
-                ZakatTracker.time_to_datetime(k),
-                format_number(ZakatTracker.unscale(v['rest'])),
-                format_number(ZakatTracker.unscale(v['capital'])),
-                format_number(v['count']),
-                ZakatTracker.time_to_datetime(v['last']) if v['last'] else '-',
-                format_number(ZakatTracker.unscale(v['total'])),
-            ) for k,v in sorted(self.db.boxes(account).items(), reverse=True)]
+        keyword = self.boxes_table_keyword if hasattr(self, 'boxes_table_keyword') else ''
+        if self.boxes_table_data is None or keyword or self.boxes_table_last_keyword:
+            self.boxes_table_data = [
+                (
+                    ZakatTracker.time_to_datetime(k),
+                    format_number(ZakatTracker.unscale(v['rest'])),
+                    format_number(ZakatTracker.unscale(v['capital'])),
+                    format_number(v['count']),
+                    ZakatTracker.time_to_datetime(v['last']) if v['last'] else '-',
+                    format_number(ZakatTracker.unscale(v['total'])),
+                )
+                for k,v in sorted(self.db.boxes(account).items(), reverse=True)
+                if keyword in f'{k}{v}'
+            ]
+            self.boxes_table_last_keyword = keyword
         chunk, self.boxes_table_total_pages, self.boxes_table_total_items = self.paginate(
             self.boxes_table_data,
             self.boxes_table_items_per_page,
@@ -2184,12 +2284,18 @@ class ZakatLedger(toga.App):
         return chunk
 
     def logs_table_items(self, account: str):
-        if self.logs_table_data is None:
-            self.logs_table_data = [(
-                ZakatTracker.time_to_datetime(k),
-                format_number(ZakatTracker.unscale(v['value'])),
-                v['desc'],
-            ) for k,v in sorted(self.db.logs(account).items(), reverse=True)]
+        keyword = self.logs_table_keyword if hasattr(self, 'logs_table_keyword') else ''
+        if self.logs_table_data is None or keyword or self.logs_table_last_keyword:
+            self.logs_table_data = [
+                (
+                    ZakatTracker.time_to_datetime(k),
+                    format_number(ZakatTracker.unscale(v['value'])),
+                    v['desc'],
+                )
+                for k,v in sorted(self.db.logs(account).items(), reverse=True)
+                if keyword in f'{k}{v}'
+            ]
+            self.logs_table_last_keyword = keyword
         chunk, self.logs_table_total_pages, self.logs_table_total_items = self.paginate(
             self.logs_table_data,
             self.logs_table_items_per_page,
@@ -2212,12 +2318,18 @@ class ZakatLedger(toga.App):
                 format_number(exchange['rate']),
                 exchange['description'],
             )]
-        if self.exchanges_table_data is None:
-            self.exchanges_table_data = [(
-                ZakatTracker.time_to_datetime(k),
-                format_number(v['rate']),
-                v['description'],
-            ) for k,v in sorted(exchanges[account].items(), reverse=True)]
+        keyword = self.exchanges_table_keyword if hasattr(self, 'exchanges_table_keyword') else ''
+        if self.exchanges_table_data is None or keyword or self.exchanges_table_last_keyword:
+            self.exchanges_table_data = [
+                (
+                    ZakatTracker.time_to_datetime(k),
+                    format_number(v['rate']),
+                    v['description'],
+                )
+                for k,v in sorted(exchanges[account].items(), reverse=True)
+                if keyword in f'{k}{v}{ZakatTracker.time_to_datetime(k)}'
+            ]
+            self.exchanges_table_last_keyword = keyword
         chunk, self.exchanges_table_total_pages, self.exchanges_table_total_items = self.paginate(
             self.exchanges_table_data,
             self.exchanges_table_items_per_page,
