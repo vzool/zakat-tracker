@@ -1003,13 +1003,13 @@ class ZakatLedger(toga.App):
                 data = results['resultData'].getData()
                 context = self._impl.native
                 bytes_data = bytes((context.getContentResolver().openInputStream(data).readAllBytes()))
-                file_path = os.path.join(self.paths.cache, 'import.pickle')
+                file_path = os.path.join(self.paths.cache, 'import.camel')
                 with open(file_path, "wb") as file:
                     file.write(bytes_data)
             else:
                 file_path = await self.main_window.open_file_dialog(
                     self.i18n.t('open_database_file'),
-                    file_types=['pickle'],
+                    file_types=['camel'],
                     multiple_select=False,
                 )
             print('open_file_dialog', file_path)
@@ -1069,7 +1069,7 @@ class ZakatLedger(toga.App):
                 if not shared_folder.exists():
                     shared_folder.mkdirs()
                 print('shared_folder', shared_folder.getAbsolutePath())
-                file_path = os.path.join(shared_folder.getAbsolutePath(), 'zakat.pickle')
+                file_path = os.path.join(shared_folder.getAbsolutePath(), 'zakat.camel')
                 self.db.save(file_path)
                 print('file_path', file_path)
                 file = File(str(file_path))
@@ -1083,7 +1083,7 @@ class ZakatLedger(toga.App):
                 print('file_intent', file_intent)
                 intent = Intent(Intent.ACTION_SEND)
                 intent.setType("*/*")
-                intent.putExtra(Intent.EXTRA_TITLE, 'zakat.pickle')
+                intent.putExtra(Intent.EXTRA_TITLE, 'zakat.camel')
                 intent.putExtra(Intent.EXTRA_STREAM, file_intent)
                 def on_complete(code, data):
                     # Activity.RESULT_CANCELED == 0
@@ -1097,13 +1097,13 @@ class ZakatLedger(toga.App):
                 return
             file_path = await self.main_window.save_file_dialog(
                 self.i18n.t('save_database_file'),
-                suggested_filename='zakat.pickle',
-                file_types=['pickle'],
+                suggested_filename='zakat.camel',
+                file_types=['camel'],
             )
             if not file_path:
                 return
             file_path = str(file_path)
-            file_path += '.pickle' if not file_path.endswith('.pickle') else ''
+            file_path += '.camel' if not file_path.endswith('.camel') else ''
             print('save_file_dialog', file_path)
             try:
                 if self.db.save(file_path):
