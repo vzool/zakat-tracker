@@ -756,7 +756,7 @@ class ZakatLedger(toga.App):
     def csv_bad_records_report_page(self, report):
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         created, found, bad = report
-        data = [[k]+v for k, v in bad.items()]
+        data = [(k,)+v for k, v in bad.items()]
         page_label = toga.Label(
             self.i18n.t('csv_bad_records_report_page_title').format(len(data), created, found),
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
