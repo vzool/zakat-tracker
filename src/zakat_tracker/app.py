@@ -1327,12 +1327,12 @@ class ZakatLedger(toga.App):
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     @staticmethod
-    def paginate(items: list, page_size: int, page_number: int) -> tuple[int, int, int]:
+    def paginate(items: list | dict, page_size: int, page_number: int) -> tuple[int, int, int]:
         """
         Paginate a list of items into pages.
 
         Parameters:
-        items (list): The list of items to paginate.
+        items (list, dict): The list of items to paginate.
         page_size (int): The number of items per page.
         page_number (int): The current page number.
 
@@ -1346,9 +1346,12 @@ class ZakatLedger(toga.App):
         start_index = (page_number - 1) * page_size
         end_index = start_index + page_size
         page_items = []
-        for i, item in enumerate(items[start_index:end_index]):
-            item_number = start_index + i + 1  # Calculate item number
-            page_items.append((item_number,) + item)  # Include item number with item
+        if type(items) is dict:
+            page_items = list(items)[start_index:end_index]
+        else:
+            for i, item in enumerate(items[start_index:end_index]):
+                item_number = start_index + i + 1  # Calculate item number
+                page_items.append((item_number,) + item)  # Include item number with item
 
         return page_items, total_pages, total_items
 
@@ -1360,27 +1363,37 @@ class ZakatLedger(toga.App):
         print('charts_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
 
+        # daily
+        self.daily_chart_current_page = 1
+        self.daily_chart_items_per_page = 7
+        self.daily_chart_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
         def draw_daily_chart(chart, figure, *args, **kwargs):
 
             # Add a subplot that is a histogram of the data,
             # using the normal matplotlib API
             ax = figure.add_subplot()
-            data = {
-                k: (
-                    self.db.unscale(self.daily_logs_data['daily'][k]['positive']),
-                    self.db.unscale(self.daily_logs_data['daily'][k]['negative']),
-                    self.db.unscale(self.daily_logs_data['daily'][k]['total']),
-                ) for k in list(self.daily_logs_data['daily'])[:7] # TODO: paginate this.
-            }
-            print('data', data)
+            data, self.daily_chart_total_pages, self.daily_chart_total_items = self.paginate(
+                {
+                    k: (
+                        self.db.unscale(v['positive']),
+                        self.db.unscale(v['negative']),
+                        self.db.unscale(v['total']),
+                    ) for k, v in self.daily_logs_data['daily'].items()
+                },
+                page_size=self.daily_chart_items_per_page,
+                page_number=self.daily_chart_current_page,
+            )
+            print('daily_chart_data', data)
 
-            dates = list(data.keys())
-            positive_values = [v[0] for v in data.values()]
-            negative_values = [v[1] for v in data.values()]
-            total_values = [v[2] for v in data.values()]
+            positive_values = [v[0] for v in [list(self.daily_logs_data['daily'][x].values()) for x in data]]
+            negative_values = [v[1] for v in [list(self.daily_logs_data['daily'][x].values()) for x in data]]
+            total_values = [v[2] for v in [list(self.daily_logs_data['daily'][x].values()) for x in data]]
 
             bar_width = 0.25
-            index = range(len(dates))
+            index = range(len(data))
 
             # Grouped bars (positive, negative, and total)
             bars_pos = ax.bar(index, positive_values, bar_width, label=self.i18n.t('income'), color='#30cb00')
@@ -1400,32 +1413,83 @@ class ZakatLedger(toga.App):
             ax.set_ylabel(self.i18n.t('value'))
             # ax.set_title(self.i18n.t('daily_chart_label'))
             ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
-            ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
+            ax.set_xticklabels(data, rotation=45, ha="right")  # Rotate date labels for readability
             ax.legend()
             figure.tight_layout()
         self.daily_chart = toga_chart.Chart(style=Pack(flex=1), on_draw=draw_daily_chart)
+        daily_buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def daily_refresh(widget):
+            self.daily_chart.redraw()
+            self.daily_chart_pagination_label.text = self.i18n.t('table_pagination_label').format(
+                format_number(self.daily_chart_total_items),
+                format_number(self.daily_chart_items_per_page),
+                format_number(self.daily_chart_current_page),
+                format_number(self.daily_chart_total_pages),
+            )
+        def last(widget):
+            print('last')        
+            if self.daily_chart_current_page == self.daily_chart_total_pages:
+                return
+            self.daily_chart_current_page = self.daily_chart_total_pages
+            daily_refresh(widget)
+        def next(widget):
+            print('next')
+            if self.daily_chart_current_page < self.daily_chart_total_pages:
+                self.daily_chart_current_page += 1
+                daily_refresh(widget)
+        def previous(widget):
+            print('previous')
+            if self.daily_chart_current_page > 1:
+                self.daily_chart_current_page -= 1
+                daily_refresh(widget)
+        def first(widget):
+            print('first')
+            if self.daily_chart_current_page == 1:
+                return
+            self.daily_chart_current_page = 1
+            daily_refresh(widget)
+        daily_first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        daily_previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        daily_refresh_button = toga.Button(self.i18n.t('refresh'), on_press=daily_refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        daily_next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        daily_last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        daily_buttons_box.add(daily_first_button)
+        daily_buttons_box.add(daily_previous_button)
+        daily_buttons_box.add(daily_refresh_button)
+        daily_buttons_box.add(daily_next_button)
+        daily_buttons_box.add(daily_last_button)
 
+        # monthly
+        self.monthly_chart_current_page = 1
+        self.monthly_chart_items_per_page = 6
+        self.monthly_chart_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
         def draw_monthly_chart(chart, figure, *args, **kwargs):
 
             # Add a subplot that is a histogram of the data,
             # using the normal matplotlib API
             ax = figure.add_subplot()
-            data = {
-                k: (
-                    self.db.unscale(self.daily_logs_data['monthly'][k]['positive']),
-                    self.db.unscale(self.daily_logs_data['monthly'][k]['negative']),
-                    self.db.unscale(self.daily_logs_data['monthly'][k]['total']),
-                ) for k in list(self.daily_logs_data['monthly'])[:6] # TODO: paginate this.
-            }
-            print('data', data)
+            data, self.monthly_chart_total_pages, self.monthly_chart_total_items = self.paginate(
+                {
+                    k: (
+                        self.db.unscale(v['positive']),
+                        self.db.unscale(v['negative']),
+                        self.db.unscale(v['total']),
+                    ) for k, v in self.daily_logs_data['monthly'].items()
+                },
+                page_size=self.monthly_chart_items_per_page,
+                page_number=self.monthly_chart_current_page,
+            )
+            print('monthly_chart_data', data)
 
-            dates = list(data.keys())
-            positive_values = [v[0] for v in data.values()]
-            negative_values = [v[1] for v in data.values()]
-            total_values = [v[2] for v in data.values()]
+            positive_values = [v[0] for v in [list(self.daily_logs_data['monthly'][x].values()) for x in data]]
+            negative_values = [v[1] for v in [list(self.daily_logs_data['monthly'][x].values()) for x in data]]
+            total_values = [v[2] for v in [list(self.daily_logs_data['monthly'][x].values()) for x in data]]
 
             bar_width = 0.25
-            index = range(len(dates))
+            index = range(len(data))
 
             # Grouped bars (positive, negative, and total)
             bars_pos = ax.bar(index, positive_values, bar_width, label=self.i18n.t('income'), color='#30cb00')
@@ -1445,32 +1509,83 @@ class ZakatLedger(toga.App):
             ax.set_ylabel(self.i18n.t('value'))
             # ax.set_title(self.i18n.t('monthly_chart_label'))
             ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
-            ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
+            ax.set_xticklabels(data, rotation=45, ha="right")  # Rotate date labels for readability
             ax.legend()
             figure.tight_layout()
         self.monthly_chart = toga_chart.Chart(style=Pack(flex=1), on_draw=draw_monthly_chart)
+        monthly_buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def monthly_refresh(widget):
+            self.monthly_chart.redraw()
+            self.monthly_chart_pagination_label.text = self.i18n.t('table_pagination_label').format(
+                format_number(self.monthly_chart_total_items),
+                format_number(self.monthly_chart_items_per_page),
+                format_number(self.monthly_chart_current_page),
+                format_number(self.monthly_chart_total_pages),
+            )
+        def last(widget):
+            print('last')        
+            if self.monthly_chart_current_page == self.monthly_chart_total_pages:
+                return
+            self.monthly_chart_current_page = self.monthly_chart_total_pages
+            monthly_refresh(widget)
+        def next(widget):
+            print('next')
+            if self.monthly_chart_current_page < self.monthly_chart_total_pages:
+                self.monthly_chart_current_page += 1
+                monthly_refresh(widget)
+        def previous(widget):
+            print('previous')
+            if self.monthly_chart_current_page > 1:
+                self.monthly_chart_current_page -= 1
+                monthly_refresh(widget)
+        def first(widget):
+            print('first')
+            if self.monthly_chart_current_page == 1:
+                return
+            self.monthly_chart_current_page = 1
+            monthly_refresh(widget)
+        monthly_first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        monthly_previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        monthly_refresh_button = toga.Button(self.i18n.t('refresh'), on_press=monthly_refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        monthly_next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        monthly_last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        monthly_buttons_box.add(monthly_first_button)
+        monthly_buttons_box.add(monthly_previous_button)
+        monthly_buttons_box.add(monthly_refresh_button)
+        monthly_buttons_box.add(monthly_next_button)
+        monthly_buttons_box.add(monthly_last_button)
         
+        # yearly
+        self.yearly_chart_current_page = 1
+        self.yearly_chart_items_per_page = 5
+        self.yearly_chart_pagination_label = toga.Label(
+            self.i18n.t('table_pagination_label'),
+            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+        )
         def draw_yearly_chart(chart, figure, *args, **kwargs):
 
             # Add a subplot that is a histogram of the data,
             # using the normal matplotlib API
             ax = figure.add_subplot()
-            data = {
-                k: (
-                    self.db.unscale(self.daily_logs_data['yearly'][k]['positive']),
-                    self.db.unscale(self.daily_logs_data['yearly'][k]['negative']),
-                    self.db.unscale(self.daily_logs_data['yearly'][k]['total']),
-                ) for k in list(self.daily_logs_data['yearly'])[:5] # TODO: paginate this.
-            }
-            print('data', data)
+            data, self.yearly_chart_total_pages, self.yearly_chart_total_items = self.paginate(
+                {
+                    k: (
+                        self.db.unscale(v['positive']),
+                        self.db.unscale(v['negative']),
+                        self.db.unscale(v['total']),
+                    ) for k, v in self.daily_logs_data['yearly'].items()
+                },
+                page_size=self.yearly_chart_items_per_page,
+                page_number=self.yearly_chart_current_page,
+            )
+            print('yearly_chart_data', data)
 
-            dates = list(data.keys())
-            positive_values = [v[0] for v in data.values()]
-            negative_values = [v[1] for v in data.values()]
-            total_values = [v[2] for v in data.values()]
+            positive_values = [v[0] for v in [list(self.daily_logs_data['yearly'][x].values()) for x in data]]
+            negative_values = [v[1] for v in [list(self.daily_logs_data['yearly'][x].values()) for x in data]]
+            total_values = [v[2] for v in [list(self.daily_logs_data['yearly'][x].values()) for x in data]]
 
             bar_width = 0.25
-            index = range(len(dates))
+            index = range(len(data))
 
             # Grouped bars (positive, negative, and total)
             bars_pos = ax.bar(index, positive_values, bar_width, label=self.i18n.t('income'), color='#30cb00')
@@ -1490,32 +1605,94 @@ class ZakatLedger(toga.App):
             ax.set_ylabel(self.i18n.t('value'))
             # ax.set_title(self.i18n.t('yearly_chart_label'))
             ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
-            ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
+            ax.set_xticklabels(data, rotation=45, ha="right")  # Rotate date labels for readability
             ax.legend()
             figure.tight_layout()
         self.yearly_chart = toga_chart.Chart(style=Pack(flex=1), on_draw=draw_yearly_chart)
+        yearly_buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
+        def yearly_refresh(widget):
+            self.yearly_chart.redraw()
+            self.yearly_chart_pagination_label.text = self.i18n.t('table_pagination_label').format(
+                format_number(self.yearly_chart_total_items),
+                format_number(self.yearly_chart_items_per_page),
+                format_number(self.yearly_chart_current_page),
+                format_number(self.yearly_chart_total_pages),
+            )
+        def last(widget):
+            print('last')        
+            if self.yearly_chart_current_page == self.yearly_chart_total_pages:
+                return
+            self.yearly_chart_current_page = self.yearly_chart_total_pages
+            yearly_refresh(widget)
+        def next(widget):
+            print('next')
+            if self.yearly_chart_current_page < self.yearly_chart_total_pages:
+                self.yearly_chart_current_page += 1
+                yearly_refresh(widget)
+        def previous(widget):
+            print('previous')
+            if self.yearly_chart_current_page > 1:
+                self.yearly_chart_current_page -= 1
+                yearly_refresh(widget)
+        def first(widget):
+            print('first')
+            if self.yearly_chart_current_page == 1:
+                return
+            self.yearly_chart_current_page = 1
+            yearly_refresh(widget)
+        yearly_first_button = toga.Button('>|', on_press=first, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        yearly_previous_button = toga.Button('>', on_press=previous, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        yearly_refresh_button = toga.Button(self.i18n.t('refresh'), on_press=yearly_refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        yearly_next_button = toga.Button('<', on_press=next, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        yearly_last_button = toga.Button('|<', on_press=last, style=Pack(width=66, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        yearly_buttons_box.add(yearly_first_button)
+        yearly_buttons_box.add(yearly_previous_button)
+        yearly_buttons_box.add(yearly_refresh_button)
+        yearly_buttons_box.add(yearly_next_button)
+        yearly_buttons_box.add(yearly_last_button)
 
         def update_charts(widget):
             print('update_charts')
-            self.daily_chart.redraw()
-            self.monthly_chart.redraw()
-            self.yearly_chart.redraw()
+            daily_refresh(widget)
+            monthly_refresh(widget)
+            yearly_refresh(widget)
         refresh_button = toga.Button(self.i18n.t('refresh'), on_press=update_charts, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         page.add(refresh_button)
         page.add(toga.Divider())
+
+        # daily
         page.add(toga.Label(self.i18n.t('daily_chart_label'), style=Pack(text_align='center', font_weight='bold', font_size=10, padding_top=45, text_direction=self.dir)))
+        page.add(toga.Divider())
+        page.add(self.daily_chart_pagination_label)
         page.add(toga.Divider())
         page.add(self.daily_chart)
         page.add(toga.Divider())
+        page.add(daily_buttons_box)
+        page.add(toga.Divider())
+        daily_refresh(self)
+
+        # monthly
         page.add(toga.Label(self.i18n.t('monthly_chart_label'), style=Pack(text_align='center', font_weight='bold', font_size=10, padding_top=45, text_direction=self.dir)))
+        page.add(toga.Divider())
+        page.add(self.monthly_chart_pagination_label)
         page.add(toga.Divider())
         page.add(self.monthly_chart)
         page.add(toga.Divider())
+        page.add(monthly_buttons_box)
+        page.add(toga.Divider())
+        monthly_refresh(self)
+
+        # yearly
         page.add(toga.Label(self.i18n.t('yearly_chart_label'), style=Pack(text_align='center', font_weight='bold', font_size=10, padding_top=45, text_direction=self.dir)))
+        page.add(toga.Divider())
+        page.add(self.yearly_chart_pagination_label)
         page.add(toga.Divider())
         page.add(self.yearly_chart)
         page.add(toga.Divider())
+        page.add(yearly_buttons_box)
+        page.add(toga.Divider())
+        yearly_refresh(self)
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
     ###############################################################################
