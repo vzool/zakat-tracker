@@ -1367,10 +1367,10 @@ class ZakatLedger(toga.App):
             ax = figure.add_subplot()
             data = {
                 k: (
-                    self.db.unscale(v['positive']),
-                    self.db.unscale(v['negative']),
-                    self.db.unscale(v['total']),
-                ) for k,v in self.daily_logs_data['daily'].items()
+                    self.db.unscale(self.daily_logs_data['daily'][k]['positive']),
+                    self.db.unscale(self.daily_logs_data['daily'][k]['negative']),
+                    self.db.unscale(self.daily_logs_data['daily'][k]['total']),
+                ) for k in list(self.daily_logs_data['daily'])[:7] # TODO: paginate this.
             }
             print('data', data)
 
@@ -1398,7 +1398,7 @@ class ZakatLedger(toga.App):
             # Customization
             ax.set_xlabel(self.i18n.t('date'))
             ax.set_ylabel(self.i18n.t('value'))
-            ax.set_title(self.i18n.t('daily_chart_label'))
+            # ax.set_title(self.i18n.t('daily_chart_label'))
             ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
             ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
             ax.legend()
@@ -1412,10 +1412,10 @@ class ZakatLedger(toga.App):
             ax = figure.add_subplot()
             data = {
                 k: (
-                    self.db.unscale(v['positive']),
-                    self.db.unscale(v['negative']),
-                    self.db.unscale(v['total']),
-                ) for k,v in self.daily_logs_data['monthly'].items()
+                    self.db.unscale(self.daily_logs_data['monthly'][k]['positive']),
+                    self.db.unscale(self.daily_logs_data['monthly'][k]['negative']),
+                    self.db.unscale(self.daily_logs_data['monthly'][k]['total']),
+                ) for k in list(self.daily_logs_data['monthly'])[:6] # TODO: paginate this.
             }
             print('data', data)
 
@@ -1443,7 +1443,7 @@ class ZakatLedger(toga.App):
             # Customization
             ax.set_xlabel(self.i18n.t('date'))
             ax.set_ylabel(self.i18n.t('value'))
-            ax.set_title(self.i18n.t('monthly_chart_label'))
+            # ax.set_title(self.i18n.t('monthly_chart_label'))
             ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
             ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
             ax.legend()
@@ -1457,10 +1457,10 @@ class ZakatLedger(toga.App):
             ax = figure.add_subplot()
             data = {
                 k: (
-                    self.db.unscale(v['positive']),
-                    self.db.unscale(v['negative']),
-                    self.db.unscale(v['total']),
-                ) for k,v in self.daily_logs_data['yearly'].items()
+                    self.db.unscale(self.daily_logs_data['yearly'][k]['positive']),
+                    self.db.unscale(self.daily_logs_data['yearly'][k]['negative']),
+                    self.db.unscale(self.daily_logs_data['yearly'][k]['total']),
+                ) for k in list(self.daily_logs_data['yearly'])[:5] # TODO: paginate this.
             }
             print('data', data)
 
@@ -1488,7 +1488,7 @@ class ZakatLedger(toga.App):
             # Customization
             ax.set_xlabel(self.i18n.t('date'))
             ax.set_ylabel(self.i18n.t('value'))
-            ax.set_title(self.i18n.t('yearly_chart_label'))
+            # ax.set_title(self.i18n.t('yearly_chart_label'))
             ax.set_xticks([x + bar_width for x in index])  # Center x-ticks between the three bar groups
             ax.set_xticklabels(dates, rotation=45, ha="right")  # Rotate date labels for readability
             ax.legend()
@@ -1504,9 +1504,15 @@ class ZakatLedger(toga.App):
 
         page.add(refresh_button)
         page.add(toga.Divider())
+        page.add(toga.Label(self.i18n.t('daily_chart_label'), style=Pack(text_align='center', font_weight='bold', font_size=10, padding_top=45, text_direction=self.dir)))
+        page.add(toga.Divider())
         page.add(self.daily_chart)
         page.add(toga.Divider())
+        page.add(toga.Label(self.i18n.t('monthly_chart_label'), style=Pack(text_align='center', font_weight='bold', font_size=10, padding_top=45, text_direction=self.dir)))
+        page.add(toga.Divider())
         page.add(self.monthly_chart)
+        page.add(toga.Divider())
+        page.add(toga.Label(self.i18n.t('yearly_chart_label'), style=Pack(text_align='center', font_weight='bold', font_size=10, padding_top=45, text_direction=self.dir)))
         page.add(toga.Divider())
         page.add(self.yearly_chart)
         page.add(toga.Divider())
