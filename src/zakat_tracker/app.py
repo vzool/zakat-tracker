@@ -24,10 +24,11 @@ import threading
 import toga_chart
 
 def format_number(x) -> str:
-    y = str(x).rstrip('0').rstrip('.')
     if not x:
         return '0'
-    return format(float(y), ',').rstrip('0').rstrip('.')
+    y = format(float(x), ',').lstrip('0').rstrip('.')
+    y = y.replace('.0', '') if y.endswith('.0') else y
+    return y.replace('.', '0.') if y.startswith('.') else y
 
 def trim_with_ellipsis(text, max_length=39):
     """Trims a string to the specified maximum length, adding ellipsis (...) if truncated."""
@@ -61,6 +62,7 @@ class ZakatLedger(toga.App):
         
         self.debug = False
         self.debug_loading_page = False
+        self.disable_charts = True
 
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
@@ -1362,6 +1364,8 @@ class ZakatLedger(toga.App):
     def charts_page(self):
         print('charts_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        if self.disable_charts:
+            return page
 
         # daily
         self.daily_chart_current_page = 1
@@ -1845,6 +1849,7 @@ class ZakatLedger(toga.App):
                 if keyword in f'{k}{v}'
             ]
             self.transactions_box_last_keyword = keyword
+        # page_items, total_pages, total_items
         chunk, self.transactions_box_total_pages, self.transactions_box_total_items = self.paginate(
             self.transactions_box_data,
             self.transactions_box_items_per_page,
@@ -1889,6 +1894,7 @@ class ZakatLedger(toga.App):
             self.transactions_box_current_page = 1
         self.transactions_box_items_per_page = 7
         transactions_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
+        rows_count = 0
         for sn, date_str, v in self.transactions_box_items():
             print(sn, date_str)
             date = datetime.strptime(date_str, '%Y-%m-%d')
@@ -1902,9 +1908,14 @@ class ZakatLedger(toga.App):
                 ],
             ))
             transactions_box.add(toga.Divider())
+            count = len(v['rows'])
+            print('- rows_count', count)
+            rows_count += count
             for x in v['rows']:
                 transactions_box.add(self.transaction_row_widget(x))
                 transactions_box.add(toga.Divider())
+        print('# -----------------------------')
+        print('# rows_count', rows_count)
         if self.daily_logs_data['daily']:
             buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
             def last(widget):
