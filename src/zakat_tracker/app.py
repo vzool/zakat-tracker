@@ -62,7 +62,7 @@ class ZakatLedger(toga.App):
         
         self.debug = False
         self.debug_loading_page = False
-        self.disable_charts = not True
+        self.disable_charts = True
 
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
