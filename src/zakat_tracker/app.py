@@ -62,7 +62,7 @@ class ZakatLedger(toga.App):
         
         self.debug = False
         self.debug_loading_page = False
-        self.disable_charts = True
+        self.disable_charts = not True
 
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
@@ -1816,10 +1816,13 @@ class ZakatLedger(toga.App):
         page.add(buttons_box)
         return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
-    def transaction_row_widget(self, row):
+    def transaction_row_widget(self, data):
+        print('row', data)
+        sn, row = data
         text = '↔' if row['transfer'] else ('+' if row['value'] > 0 else '-')
         background_color='#4e91fd' if row['transfer'] else ('#30cb00' if row['value'] > 0 else '#FF5252')
         return toga.Box(style=Pack(direction=ROW, text_direction=self.dir), children=[
+            toga.Label(f'{sn:02d}', style=Pack(text_direction=self.dir, padding=9, text_align=self.text_align, font_weight='bold')),
             toga.Label(text, style=Pack(background_color=background_color, width=32, font_weight='bold', text_align='center', font_size=18)),
             toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir), children=[
                 toga.Label(trim_with_ellipsis(row['desc']), style=Pack(text_direction=self.dir, text_align=self.text_align)),
@@ -1845,8 +1848,10 @@ class ZakatLedger(toga.App):
         keyword = self.transactions_box_keyword if hasattr(self, 'transactions_box_keyword') else ''
         if self.transactions_box_data is None or keyword or self.transactions_box_last_keyword:
             self.transactions_box_data = [
-                (k, v) for k,v in self.daily_logs_data['daily'].items()
-                if keyword in f'{k}{v}'
+                (date, date_data['total'], row)
+                for date, date_data in self.daily_logs_data['daily'].items()
+                    for row in date_data['rows']
+                        if keyword in f'{date}{row}'
             ]
             self.transactions_box_last_keyword = keyword
         # page_items, total_pages, total_items
@@ -1855,13 +1860,21 @@ class ZakatLedger(toga.App):
             self.transactions_box_items_per_page,
             self.transactions_box_current_page,
         )
+        print('chunk', chunk)
+        result = {}
+        for sn, date, total, row in chunk:
+            if date not in result:
+                result[date] = {'total': total}
+                result[date]['rows'] = []
+            result[date]['rows'].append((sn, row))
+        print('result', result)
         self.transactions_box_pagination_label.text = self.i18n.t('table_pagination_label').format(
             format_number(self.transactions_box_total_items),
             format_number(self.transactions_box_items_per_page),
             format_number(self.transactions_box_current_page),
             format_number(self.transactions_box_total_pages),
         )
-        return chunk
+        return result
 
     def transactions_page(self):
         print('transactions_page')
@@ -1895,27 +1908,21 @@ class ZakatLedger(toga.App):
         self.transactions_box_items_per_page = 7
         transactions_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         rows_count = 0
-        for sn, date_str, v in self.transactions_box_items():
-            print(sn, date_str)
+        for date_str, v in self.transactions_box_items().items():
+            print(date_str)
             date = datetime.strptime(date_str, '%Y-%m-%d')
             weekday = self.i18n.t(date.strftime("%A").lower())
             transactions_box.add(toga.Box(
                 style=Pack(direction=ROW, text_direction=self.dir, background_color="#CCCCCC"),
                 children=[
-                    toga.Label(f'{sn:02d}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
-                    toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align='center', font_weight='bold')),
+                    toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
                     toga.Label(format_number(self.db.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
                 ],
             ))
             transactions_box.add(toga.Divider())
-            count = len(v['rows'])
-            print('- rows_count', count)
-            rows_count += count
             for x in v['rows']:
                 transactions_box.add(self.transaction_row_widget(x))
                 transactions_box.add(toga.Divider())
-        print('# -----------------------------')
-        print('# rows_count', rows_count)
         if self.daily_logs_data['daily']:
             buttons_box = toga.Box(style=Pack(direction=ROW, text_direction=self.dir))
             def last(widget):
