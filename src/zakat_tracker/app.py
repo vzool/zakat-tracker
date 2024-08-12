@@ -1907,7 +1907,6 @@ class ZakatLedger(toga.App):
             self.transactions_box_current_page = 1
         self.transactions_box_items_per_page = 7
         transactions_box = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        rows_count = 0
         for date_str, v in self.transactions_box_items().items():
             print(date_str)
             date = datetime.strptime(date_str, '%Y-%m-%d')
