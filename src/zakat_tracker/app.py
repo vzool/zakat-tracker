@@ -2,6 +2,8 @@
 Personal Accounting Software using Zakat way for all transactions from the beginning to the end
 """
 
+charts_library_missing = True
+
 from time import time_ns
 start_time = time_ns()
 
@@ -21,7 +23,11 @@ import pathlib
 import json
 import asyncio
 import threading
-import toga_chart
+try:
+    import toga_chart
+    charts_library_missing = False
+except:
+    pass
 
 def format_number(x) -> str:
     if not x:
@@ -62,7 +68,7 @@ class ZakatLedger(toga.App):
         
         self.debug = False
         self.debug_loading_page = False
-        self.disable_charts = True
+        self.disable_charts = charts_library_missing
 
         self.icon = toga.Icon.APP_ICON
         self.os = toga.platform.current_platform.lower()
@@ -256,8 +262,8 @@ class ZakatLedger(toga.App):
             # go back to transctions tab
             self.main_tabs_page_box.current_tab = tab_index
         #=======================================================
-        if not transactions_page_only:
-            self.refresh_zakat_page()
+        # if not transactions_page_only:
+        #     self.refresh_zakat_page()
         finish = ZakatTracker.time()
         self.refresh_time = self.format_time(finish - start)
         print(self.refresh_time)
@@ -354,7 +360,7 @@ class ZakatLedger(toga.App):
                 # page.add(self.zakat_note)
 
         self.refresh_zakat_page = refresh_zakat_page
-        self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
 
         def create_table():
             self.zakat_table = toga.Table(
@@ -381,7 +387,7 @@ class ZakatLedger(toga.App):
         page.add(self.zakat_page_label_box)
         page.add(self.zakat_note)
         create_table()
-        refresh_zakat_page()
+        # refresh_zakat_page()
 
         page.add(self.zakat_before_note_divider)
         page.add(self.zakat_on_boxes_note)
@@ -1365,7 +1371,7 @@ class ZakatLedger(toga.App):
         print('charts_page')
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
         if self.disable_charts:
-            return page
+            return toga.ScrollContainer(content=page, style=Pack(flex=1)) if self.android else page
 
         # daily
         self.daily_chart_current_page = 1
