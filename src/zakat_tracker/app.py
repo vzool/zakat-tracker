@@ -286,78 +286,115 @@ class ZakatLedger(toga.App):
 
         # refresh_button
         def refresh_zakat_page(widget = None):
-            self.update_accounts(widget)
-            self.zakat_plan = self.db.check(
-                silver_gram_price=self.config_silver_gram_price_in_local_currency,
-                unscaled_nisab=ZakatTracker.Nisab(
-                    self.config_silver_gram_price_in_local_currency,
-                    self.config_silver_nisab_gram_quantity,
-                ),
-                cycle=ZakatTracker.TimeCycle(self.config_haul_time_cycle_in_days),
-                debug=self.debug,
-            )
-            exists, stats, zakat = self.zakat_plan
-            if self.debug:
-                print(exists, stats, zakat)
-            data = []
-            total = 0
-            for account, x in zakat.items():
-                for _, y in x.items():
-                    total += y['total']
-                    data.append((
-                        ZakatTracker.time_to_datetime(y['box_time']),
-                        y['box_log'],
-                        account,
-                        format_number(ZakatTracker.unscale(y['box_capital'])),
-                        format_number(ZakatTracker.unscale(y['box_rest'])),
-                        format_number(ZakatTracker.unscale(y['total'])),
-                        format_number(y['count']),
-                        format_number(y['exchange_rate']),
-                        ZakatTracker.time_to_datetime(y['exchange_time']),
-                        y['exchange_desc'],
-                    ))
 
-            self.zakat_table.data = data
-            self.zakat_page_label.text = self.i18n.t('zakat_page_label').format(
-                format_number(ZakatTracker.unscale(stats[0])),
-                format_number(ZakatTracker.unscale(stats[1])),
-            )
+            async def load_task(widget, **kwargs):
+                #----------------------------------
+                ########### TASK THREAD ###########
+                self.thread_done = False
+                self.thread_exception = None
+                def thread():
+                    try:
+                        self.zakat_plan = self.db.check(
+                            silver_gram_price=self.config_silver_gram_price_in_local_currency,
+                            unscaled_nisab=ZakatTracker.Nisab(
+                                self.config_silver_gram_price_in_local_currency,
+                                self.config_silver_nisab_gram_quantity,
+                            ),
+                            cycle=ZakatTracker.TimeCycle(self.config_haul_time_cycle_in_days),
+                            debug=self.debug,
+                        )
+                        self.thread_result_exists, self.thread_result_stats, self.thread_result_zakat = self.zakat_plan
+                        if self.debug:
+                            print(self.thread_result_exists, self.thread_result_stats, self.thread_result_zakat)
+                        self.thread_result_data = []
+                        self.thread_result_total = 0
+                        for account, x in self.thread_result_zakat.items():
+                            for _, y in x.items():
+                                self.thread_result_total += y['total']
+                                self.thread_result_data.append((
+                                    ZakatTracker.time_to_datetime(y['box_time']),
+                                    y['box_log'],
+                                    account,
+                                    format_number(ZakatTracker.unscale(y['box_capital'])),
+                                    format_number(ZakatTracker.unscale(y['box_rest'])),
+                                    format_number(ZakatTracker.unscale(y['total'])),
+                                    format_number(y['count']),
+                                    format_number(y['exchange_rate']),
+                                    ZakatTracker.time_to_datetime(y['exchange_time']),
+                                    y['exchange_desc'],
+                                ))
 
-            pay_button_shown = False
-            if hasattr(self, 'pay_button'):
-                pay_button_shown = self.pay_button in page.children
-
-            if exists:
-                page.remove(self.zakat_note)
-                if pay_button_shown:
-                    self.pay_button.text = self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(total))}'
-                else:
-                    page.clear()
-                    self.pay_button = toga.Button(
-                        self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(total))}',
-                        on_press=self.payment_parts_form,
-                        style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+                    except Exception as e:
+                        print(e)
+                        self.thread_exception = e
+                    finally:
+                        self.thread_done = True
+                threading.Thread(target=thread).start()
+                ########### TASK THREAD ###########
+                #----------------------------------
+                ############ UI THREAD ############
+                while not self.thread_done and self.thread_exception is None:
+                    await asyncio.sleep(1)
+                ############ UI THREAD ############
+                #----------------------------------
+                if self.thread_exception and os.path.exists(self.db.path()):
+                    self.main_window.error_dialog(
+                        self.i18n.t('unexpected_error'),
+                        str(self.thread_exception) + '\n' + self.coloned_time,
                     )
-                    page.add(self.pay_button)
-                    page.add(self.zakat_page_label_box)
-                    refresh_zakat_page()
-                    create_table()
-                    page.add(self.zakat_before_note_divider)
-                    page.add(self.zakat_on_boxes_note)
-                    page.add(self.table_show_row_details_note)
-                    page.add(self.zakat_after_note_divider)
-                    page.add(self.zakat_table)
-                    self.zakat_table.data = data
-                    page.add(self.refresh_button)
-            else:
-                zakat_str = format_number(round(ZakatTracker.unscale(total), 2))
-                total_str = format_number(round(ZakatTracker.unscale(stats[1]), 2))
-                nisab_str = format_number(round(self.nisab, 2))
-                self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
-                if pay_button_shown:
-                    self.zakat_page_label_box.add(self.zakat_note)
-                    page.replace(self.pay_button, self.zakat_page_label_box)
-                # page.add(self.zakat_note)
+                # -------- Update UI --------
+                await asyncio.sleep(1)
+                # -------- Update UI --------
+                self.zakat_table.data = self.thread_result_data
+                self.zakat_page_label.text = self.i18n.t('zakat_page_label').format(
+                    format_number(ZakatTracker.unscale(self.thread_result_stats[0])),
+                    format_number(ZakatTracker.unscale(self.thread_result_stats[1])),
+                )
+
+                pay_button_shown = False
+                if hasattr(self, 'pay_button'):
+                    pay_button_shown = self.pay_button in page.children
+
+                if self.thread_result_exists:
+                    page.remove(self.zakat_note)
+                    if pay_button_shown:
+                        self.pay_button.text = self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(self.thread_result_total))}'
+                    else:
+                        page.clear()
+                        self.pay_button = toga.Button(
+                            self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(self.thread_result_total))}',
+                            on_press=self.payment_parts_form,
+                            style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
+                        )
+                        page.add(self.pay_button)
+                        page.add(self.zakat_page_label_box)
+                        refresh_zakat_page()
+                        create_table()
+                        page.add(self.zakat_before_note_divider)
+                        page.add(self.zakat_on_boxes_note)
+                        page.add(self.table_show_row_details_note)
+                        page.add(self.zakat_after_note_divider)
+                        page.add(self.zakat_table)
+                        self.zakat_table.data = self.thread_result_data
+                        page.add(self.refresh_button)
+                else:
+                    zakat_str = format_number(round(ZakatTracker.unscale(self.thread_result_total), 2))
+                    total_str = format_number(round(ZakatTracker.unscale(self.thread_result_stats[1]), 2))
+                    nisab_str = format_number(round(self.nisab, 2))
+                    self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
+                    if pay_button_shown:
+                        self.zakat_page_label_box.add(self.zakat_note)
+                        page.replace(self.pay_button, self.zakat_page_label_box)
+                self.thread_finish_time = time_ns()
+                self.thread_load_time = self.format_time(self.thread_finish_time - self.thread_start_time)
+                self.main_window.info_dialog(
+                    self.i18n.t('message_status'),
+                    self.i18n.t('load_time') + f'\n{self.thread_load_time}',
+                )
+                self.goto_main_page(widget)
+            self.main_window.content = self.loading_page(widget)
+            self.thread_start_time = time_ns()
+            self.add_background_task(load_task)
 
         self.refresh_zakat_page = refresh_zakat_page
         self.refresh_button = toga.Button(self.i18n.t('refresh'), on_press=self.refresh_zakat_page, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))

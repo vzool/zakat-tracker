@@ -133,7 +133,7 @@ translations = {
     'calculating_database_stats_on_startup': 'حساب احصائيات قاعدة البيانات عند التحميل المبدئي',
     'ram_size': 'حجم ذاكرة التخزين المؤقتة',
     'database_file_size': 'حجم ملف قاعدة البيانات',
-    'load_time': 'الوقت المستغرق للتحميل المبدئي',
+    'load_time': 'الوقت المستغرق للتحميل',
     'refresh_time': 'الوقت المستغرق  لآخر تحديث للبيانات',
 
     # charts_page

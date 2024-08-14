@@ -133,7 +133,7 @@ translations = {
     'calculating_database_stats_on_startup': 'Calculate database statistics upon initial load',
     'ram_size': 'RAM Size',
     'database_file_size': 'Database File Size',
-    'load_time': 'Time taken for initial startup',
+    'load_time': 'Taken Loading Time',
     'refresh_time': 'The time it took for the data to be last updated',
     
     # charts_page
