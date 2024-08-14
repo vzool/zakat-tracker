@@ -185,8 +185,7 @@ class ZakatLedger(toga.App):
                 )
             self.main_tabs_page()
             # -------- Update UI --------
-            await asyncio.sleep(1)
-            self.refresh(widget)
+            # await asyncio.sleep(1)
             # -------- Update UI --------
             self.finish_time = time_ns()
             self.load_time = self.format_time(self.finish_time - start_time)
@@ -266,8 +265,6 @@ class ZakatLedger(toga.App):
             # go back to transctions tab
             self.main_tabs_page_box.current_tab = tab_index
         #=======================================================
-        # if not transactions_page_only:
-        #     self.refresh_zakat_page()
         finish = ZakatTracker.time()
         self.refresh_time = self.format_time(finish - start)
         print(self.refresh_time)
@@ -2747,7 +2744,6 @@ class ZakatLedger(toga.App):
             return
         ref = getattr(widget.selection, access_key)
         print('history_table_on_select', ref)
-        self.refresh(widget)
         self.history_details_page(widget, ref)
 
     def account_table_on_select(self, widget):
@@ -2758,7 +2754,6 @@ class ZakatLedger(toga.App):
             return
         account = getattr(widget.selection, access_key)
         print('account_table_on_activate', account)
-        self.refresh(widget)
         self.account_tabs_page(widget, account)
 
     def account_table_on_activate(self, widget, row: toga.sources.list_source.Row):
