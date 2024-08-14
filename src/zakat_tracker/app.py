@@ -224,9 +224,13 @@ class ZakatLedger(toga.App):
 
     def main_tabs_page(self):
         print('main_tabs_page')
-        self.main_tabs_page_box = toga.OptionContainer(
-            content=[
+        optional_tabs = []
+        if not self.disable_charts:
+            optional_tabs = [
                 (self.i18n.t('main'), self.charts_page(), toga.Icon("resources/icon/main.png")),
+            ]
+        self.main_tabs_page_box = toga.OptionContainer(
+            content=optional_tabs + [
                 (self.i18n.t('accounts'), self.accounts_page(), toga.Icon("resources/icon/accounts.png")),
                 (self.i18n.t('transactions'), self.transactions_page(), toga.Icon("resources/icon/transactions.png")),
                 (self.i18n.t('zakat'), self.zakat_page(), toga.Icon("resources/icon/zakat.png")),
@@ -244,7 +248,7 @@ class ZakatLedger(toga.App):
         #=======================================================
         # transactions_page
         #=======================================================
-        tab_index = 2
+        tab_index = 1 if self.disable_charts else 2
         self.daily_logs_data = self.db.daily_logs()
         transactions_tab = self.main_tabs_page_box.content.index(self.main_tabs_page_box.current_tab) == tab_index
         print('is transactions_tab?', transactions_tab)
