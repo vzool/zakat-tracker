@@ -13,7 +13,7 @@ import toga
 import toga.sources
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
-from zakat import ZakatTracker, JSONEncoder
+from zakat import ZakatTracker, Model, DictModel, SQLModel, Helper, JSONEncoder
 from datetime import datetime
 from .i18n import i18n, Lang
 from .config import Config
@@ -75,13 +75,17 @@ class ZakatLedger(toga.App):
         self.datetime_supported = self.os in ['android', 'windows']
         self.android = self.os == 'android'
         print(f'platfom: {self.os} - datetime_supported: {self.datetime_supported}')
-        print(f'Zakat Version: {ZakatTracker.Version()}')
+        print(f'Zakat Version: {Model.Version()}')
         print(f'App Version: {self.version}')
 
-        self.db_path = os.path.join(self.paths.data, 'zakat_db', 'zakat.camel')
+        self.db_path = os.path.join(self.paths.data, 'zakat_db', 'zakat.sqlite')
         print(f'db: {self.db_path}')
-        self.db = ZakatTracker(self.db_path)
-        self.stats = self.db.stats_init()
+        self.db = ZakatTracker(SQLModel(
+            provider="sqlite",
+            filename=self.db_path,
+            create_db=True,
+            debug=True,
+        ))
 
         self.load_config()
         self.load_translations()
@@ -161,10 +165,9 @@ class ZakatLedger(toga.App):
             self.thread_exception = None
             def thread():
                 try:
-                    self.daily_logs_data = self.db.daily_logs_init()
-                    self.db.load()
-                    self.daily_logs_data = self.db.daily_logs()
-                    self.stats = self.db.stats(ignore_ram=not self.config_calculating_database_stats_on_startup)
+                    self.daily_logs_data = DictModel.daily_logs_init()
+                    # self.db.load()
+                    # self.daily_logs_data = self.db.daily_logs() # !!!
                 except Exception as e:
                     print(e)
                     self.thread_exception = e
@@ -178,7 +181,7 @@ class ZakatLedger(toga.App):
                 await asyncio.sleep(1)
             ############ UI THREAD ############
             #----------------------------------
-            if self.thread_exception and os.path.exists(self.db.path()):
+            if self.thread_exception and os.path.exists(self.db_path):
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),
                     str(self.thread_exception) + '\n' + self.coloned_time,
@@ -241,14 +244,14 @@ class ZakatLedger(toga.App):
 
     def refresh(self, widget, transactions_page_only = False):
         print('refresh')
-        start = ZakatTracker.time()
+        start = time_ns()
         if not transactions_page_only:
             self.update_accounts(widget)
         #=======================================================
         # transactions_page
         #=======================================================
         tab_index = 1 if self.disable_charts else 2
-        self.daily_logs_data = self.db.daily_logs()
+        # self.daily_logs_data = self.db.daily_logs() # !!!
         transactions_tab = self.main_tabs_page_box.content.index(self.main_tabs_page_box.current_tab) == tab_index
         print('is transactions_tab?', transactions_tab)
         if transactions_tab:
@@ -265,7 +268,7 @@ class ZakatLedger(toga.App):
             # go back to transctions tab
             self.main_tabs_page_box.current_tab = tab_index
         #=======================================================
-        finish = ZakatTracker.time()
+        finish = time_ns()
         self.refresh_time = self.format_time(finish - start)
         print(self.refresh_time)
 
@@ -301,7 +304,7 @@ class ZakatLedger(toga.App):
                                 self.config_silver_gram_price_in_local_currency,
                                 self.config_silver_nisab_gram_quantity,
                             ),
-                            cycle=ZakatTracker.TimeCycle(self.config_haul_time_cycle_in_days),
+                            cycle=Helper.TimeCycle(self.config_haul_time_cycle_in_days),
                             debug=self.debug,
                         )
                         self.thread_result_exists, self.thread_result_stats, self.thread_result_zakat = self.zakat_plan
@@ -313,15 +316,15 @@ class ZakatLedger(toga.App):
                             for _, y in x.items():
                                 self.thread_result_total += y['total']
                                 self.thread_result_data.append((
-                                    ZakatTracker.time_to_datetime(y['box_time']),
+                                    Helper.time_to_datetime(y['box_time']),
                                     y['box_log'],
                                     account,
-                                    format_number(ZakatTracker.unscale(y['box_capital'])),
-                                    format_number(ZakatTracker.unscale(y['box_rest'])),
-                                    format_number(ZakatTracker.unscale(y['total'])),
+                                    format_number(Helper.unscale(y['box_capital'])),
+                                    format_number(Helper.unscale(y['box_rest'])),
+                                    format_number(Helper.unscale(y['total'])),
                                     format_number(y['count']),
                                     format_number(y['exchange_rate']),
-                                    ZakatTracker.time_to_datetime(y['exchange_time']),
+                                    Helper.time_to_datetime(y['exchange_time']),
                                     y['exchange_desc'],
                                 ))
 
@@ -348,8 +351,8 @@ class ZakatLedger(toga.App):
                 # -------- Update UI --------
                 self.zakat_table.data = self.thread_result_data
                 self.zakat_page_label.text = self.i18n.t('zakat_page_label').format(
-                    format_number(ZakatTracker.unscale(self.thread_result_stats[0])),
-                    format_number(ZakatTracker.unscale(self.thread_result_stats[1])),
+                    format_number(Helper.unscale(self.thread_result_stats[0])),
+                    format_number(Helper.unscale(self.thread_result_stats[1])),
                 )
 
                 pay_button_shown = False
@@ -359,11 +362,11 @@ class ZakatLedger(toga.App):
                 if self.thread_result_exists:
                     page.remove(self.zakat_note)
                     if pay_button_shown:
-                        self.pay_button.text = self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(self.thread_result_total))}'
+                        self.pay_button.text = self.i18n.t('pay') + f' {format_number(Helper.unscale(self.thread_result_total))}'
                     else:
                         page.clear()
                         self.pay_button = toga.Button(
-                            self.i18n.t('pay') + f' {format_number(ZakatTracker.unscale(self.thread_result_total))}',
+                            self.i18n.t('pay') + f' {format_number(Helper.unscale(self.thread_result_total))}',
                             on_press=self.payment_parts_form,
                             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
                         )
@@ -379,8 +382,8 @@ class ZakatLedger(toga.App):
                         self.zakat_table.data = self.thread_result_data
                         page.add(self.refresh_button)
                 else:
-                    zakat_str = format_number(round(ZakatTracker.unscale(self.thread_result_total), 2))
-                    total_str = format_number(round(ZakatTracker.unscale(self.thread_result_stats[1]), 2))
+                    zakat_str = format_number(round(Helper.unscale(self.thread_result_total), 2))
+                    total_str = format_number(round(Helper.unscale(self.thread_result_stats[1]), 2))
                     nisab_str = format_number(round(self.nisab, 2))
                     self.zakat_note.text = self.i18n.t('below_nisab_note').format(zakat_str, total_str, nisab_str)
                     if pay_button_shown:
@@ -443,9 +446,8 @@ class ZakatLedger(toga.App):
                 print('cancelled')
                 return
             print('confirmed')
-            self.db.free(self.db.lock())
-            self.db.save()
-            if self.db.snapshot():
+            self.db.db.save()
+            if self.db.db.snapshot():
                 self.update_snapshot(widget)
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
@@ -571,11 +573,10 @@ class ZakatLedger(toga.App):
                 print('cancelled')
                 return
             print('confirmed')
-            self.db.free(self.db.lock())
             if self.config_create_database_file_snapshot_before_any_recovery:
-                self.db.snapshot()
+                self.db.db.snapshot()
             if self.db.recall(dry=False, debug=self.debug):
-                self.db.save()
+                self.db.db.save()
                 self.history_table_data = None
                 self.update_history(widget)
                 self.refresh(widget)
@@ -863,14 +864,14 @@ class ZakatLedger(toga.App):
             self.thread_exception = None
             def thread():
                 try:
-                    self.db.save()
+                    self.db.db.save()
                     self.db.lock()
-                    self.db.snapshot()
+                    self.db.db.snapshot()
                     self.thread_result = self.db.import_csv(
                         path=self.csv_file_path,
                         scale_decimal_places=int(self.selected_scale),
                     )
-                    self.db.save()
+                    self.db.db.save()
                 except Exception as e:
                     print(e)
                     self.thread_exception = e
@@ -975,10 +976,10 @@ class ZakatLedger(toga.App):
                     print('cancelled')
                     return
                 print('confirmed')
-                self.db.save()
-                self.db.snapshot()
+                self.db.db.save()
+                self.db.db.snapshot()
                 self.db.reset()
-                self.db.save()
+                self.db.db.save()
                 self.refresh(widget)
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
@@ -1070,10 +1071,10 @@ class ZakatLedger(toga.App):
                 def thread():
                     try:
                         ZakatTracker(file_path)
-                        self.db.save()
-                        self.db.snapshot()
+                        self.db.db.save()
+                        self.db.db.snapshot()
                         self.db.load(file_path)
-                        self.db.save()
+                        self.db.db.save()
                     except Exception as e:
                         print(e)
                         self.thread_exception = e
@@ -1116,7 +1117,7 @@ class ZakatLedger(toga.App):
                     shared_folder.mkdirs()
                 print('shared_folder', shared_folder.getAbsolutePath())
                 file_path = os.path.join(shared_folder.getAbsolutePath(), 'zakat.camel')
-                self.db.save(file_path)
+                self.db.db.save(file_path)
                 print('file_path', file_path)
                 file = File(str(file_path))
                 print('file.length:', file.length())
@@ -1152,7 +1153,7 @@ class ZakatLedger(toga.App):
             file_path += '.camel' if not file_path.endswith('.camel') else ''
             print('save_file_dialog', file_path)
             try:
-                if self.db.save(file_path):
+                if self.db.db.save(file_path):
                     self.main_window.info_dialog(
                         self.i18n.t('message_status'),
                         self.i18n.t('operation_accomplished_successfully'),
@@ -1178,17 +1179,10 @@ class ZakatLedger(toga.App):
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
 
-        # ram_size
-        ram_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
-        ram_size_label = toga.Label(self.i18n.t('ram_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        ram_size_value = toga.Label(self.stats['ram'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
-        ram_size_box.add(ram_size_label)
-        ram_size_box.add(ram_size_value)
-
         # database_file_size
         database_file_size_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
         database_file_size_label = toga.Label(self.i18n.t('database_file_size'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        database_file_size_value = toga.Label(self.stats['database'][1], style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        database_file_size_value = toga.Label('xxx', style=Pack(flex=1, text_align='center', text_direction=self.dir))
         database_file_size_box.add(database_file_size_label)
         database_file_size_box.add(database_file_size_value)
 
@@ -1227,8 +1221,6 @@ class ZakatLedger(toga.App):
         page.add(data_history_button)
         page.add(toga.Divider())
         page.add(data_snapshot_button)
-        page.add(toga.Divider())
-        page.add(ram_size_box)
         page.add(toga.Divider())
         page.add(database_file_size_box)
         page.add(toga.Divider())
@@ -1333,7 +1325,7 @@ class ZakatLedger(toga.App):
         # zakat_version
         zakat_version_box = toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir, padding=5))
         zakat_version_label = toga.Label(self.i18n.t('zakat_library_version'), style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
-        zakat_version_value = toga.Label(ZakatTracker.Version(), style=Pack(flex=1, text_align='center', text_direction=self.dir))
+        zakat_version_value = toga.Label(Model.Version(), style=Pack(flex=1, text_align='center', text_direction=self.dir))
         zakat_version_box.add(zakat_version_label)
         zakat_version_box.add(zakat_version_value)
         
@@ -1426,9 +1418,9 @@ class ZakatLedger(toga.App):
             data, self.daily_chart_total_pages, self.daily_chart_total_items = self.paginate(
                 {
                     k: (
-                        self.db.unscale(v['positive']),
-                        self.db.unscale(v['negative']),
-                        self.db.unscale(v['total']),
+                        Helper.unscale(v['positive']),
+                        Helper.unscale(v['negative']),
+                        Helper.unscale(v['total']),
                     ) for k, v in self.daily_logs_data['daily'].items()
                 },
                 page_size=self.daily_chart_items_per_page,
@@ -1522,9 +1514,9 @@ class ZakatLedger(toga.App):
             data, self.monthly_chart_total_pages, self.monthly_chart_total_items = self.paginate(
                 {
                     k: (
-                        self.db.unscale(v['positive']),
-                        self.db.unscale(v['negative']),
-                        self.db.unscale(v['total']),
+                        Helper.unscale(v['positive']),
+                        Helper.unscale(v['negative']),
+                        Helper.unscale(v['total']),
                     ) for k, v in self.daily_logs_data['monthly'].items()
                 },
                 page_size=self.monthly_chart_items_per_page,
@@ -1618,9 +1610,9 @@ class ZakatLedger(toga.App):
             data, self.yearly_chart_total_pages, self.yearly_chart_total_items = self.paginate(
                 {
                     k: (
-                        self.db.unscale(v['positive']),
-                        self.db.unscale(v['negative']),
-                        self.db.unscale(v['total']),
+                        Helper.unscale(v['positive']),
+                        Helper.unscale(v['negative']),
+                        Helper.unscale(v['total']),
                     ) for k, v in self.daily_logs_data['yearly'].items()
                 },
                 page_size=self.yearly_chart_items_per_page,
@@ -1874,7 +1866,7 @@ class ZakatLedger(toga.App):
             ]),
             toga.Box(style=Pack(direction=COLUMN, text_direction=self.dir),
                 children=[
-                    toga.Label(format_number(self.db.unscale(row['value'])), style=Pack(
+                    toga.Label(format_number(Helper.unscale(row['value'])), style=Pack(
                         flex=1,
                         text_direction=self.dir,
                         text_align=self.text_end,
@@ -1959,7 +1951,7 @@ class ZakatLedger(toga.App):
                 style=Pack(direction=ROW, text_direction=self.dir, background_color="#CCCCCC"),
                 children=[
                     toga.Label(f'{weekday} {date_str}', style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_align, font_weight='bold')),
-                    toga.Label(format_number(self.db.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
+                    toga.Label(format_number(Helper.unscale(v['total'])), style=Pack(flex=1, text_direction=self.dir, color="#000000", padding=9, text_align=self.text_end, font_weight='bold')),
                 ],
             ))
             transactions_box.add(toga.Divider())
@@ -2072,7 +2064,7 @@ class ZakatLedger(toga.App):
         )
         page.add(page_label)
         page.add(toga.Divider())
-        page.add(self.label_note_widget(self.i18n.t('history_details_page_title').format(ZakatTracker.time_to_datetime(ref))))
+        page.add(self.label_note_widget(self.i18n.t('history_details_page_title').format(Helper.time_to_datetime(ref))))
         page.add(toga.Divider())
         page.add(self.history_details_table_pagination_label)
         page.add(toga.Divider())
@@ -2132,11 +2124,11 @@ class ZakatLedger(toga.App):
 
         # hide_account_switch
         def hide_account(status):
-            self.db.hide(account, status)
-            self.db.save()
+            self.db.db.hide(account, status)
+            self.db.db.save()
         hide_account_switch = toga.Switch(
             self.i18n.t('hide_account'),
-            value=self.db.hide(account),
+            value=self.db.db.hide(account),
             on_change=lambda e: hide_account(e.value),
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
@@ -2144,12 +2136,12 @@ class ZakatLedger(toga.App):
 
         # zakatable_switch
         def zakatable(status):
-            self.db.zakatable(account, status)
+            self.db.db.zakatable(account, status)
             self.refresh(account)
-            self.db.save()
+            self.db.db.save()
         zakatable_switch = toga.Switch(
             self.i18n.t('zakatable'),
-            value=self.db.zakatable(account),
+            value=self.db.db.zakatable(account),
             on_change=lambda e: zakatable(e.value),
             style=Pack(flex=1, text_direction=self.dir, text_align='center'),
         )
@@ -2505,11 +2497,11 @@ class ZakatLedger(toga.App):
             self.history_table_data = [
                 (
                     k,
-                    ZakatTracker.time_to_datetime(k),
+                    Helper.time_to_datetime(k),
                     format_number(len(v)),
                 )
                 for k, v in sorted(self.db.steps().items(), reverse=True)
-                if keyword in f'{k}{v}{ZakatTracker.time_to_datetime(k)}'
+                if keyword in f'{k}{v}{Helper.time_to_datetime(k)}'
             ]
             self.history_table_last_keyword = keyword
         chunk, self.history_table_total_pages, self.history_table_total_items = self.paginate(
@@ -2531,13 +2523,13 @@ class ZakatLedger(toga.App):
             self.snapshot_table_data = [
                 (
                     k,
-                    ZakatTracker.time_to_datetime(k),
+                    Helper.time_to_datetime(k),
                     file_hash,
                     file_path,
                     file_exists,
                 )
                 for k, (file_hash, file_path, file_exists) in sorted(self.db.snapshots().items(), reverse=True)
-                if keyword in f'{k}{file_hash}{file_path}{file_exists}{ZakatTracker.time_to_datetime(k)}'
+                if keyword in f'{k}{file_hash}{file_path}{file_exists}{Helper.time_to_datetime(k)}'
             ]
             self.snapshot_table_last_keyword = keyword
         chunk, self.snapshot_table_total_pages, self.snapshot_table_total_items = self.paginate(
@@ -2559,14 +2551,14 @@ class ZakatLedger(toga.App):
             self.accounts_table_data = [
                 (
                     k,
-                    format_number(ZakatTracker.unscale(v)),
-                    self.db.box_size(k),
-                    self.db.log_size(k),
-                    self.i18n.t('yes') if self.db.hide(k) else self.i18n.t('no'),
-                    self.i18n.t('yes') if self.db.zakatable(k) else self.i18n.t('no'),
+                    format_number(Helper.unscale(v)),
+                    self.db.db.box_size(k),
+                    self.db.db.log_size(k),
+                    self.i18n.t('yes') if self.db.db.hide(k) else self.i18n.t('no'),
+                    self.i18n.t('yes') if self.db.db.zakatable(k) else self.i18n.t('no'),
                 )
-                for k,v in self.db.accounts().items()
-                if (not self.db.hide(k) or self.config_show_hidden_accounts) and keyword in f'{k}{v}'
+                for k,v in self.db.db.accounts().items()
+                if (not self.db.db.hide(k) or self.config_show_hidden_accounts) and keyword in f'{k}{v}'
             ]
             self.accounts_table_last_keyword = keyword
         chunk, self.accounts_table_total_pages, self.accounts_table_total_items = self.paginate(
@@ -2587,14 +2579,14 @@ class ZakatLedger(toga.App):
         if self.boxes_table_data is None or keyword or self.boxes_table_last_keyword:
             self.boxes_table_data = [
                 (
-                    ZakatTracker.time_to_datetime(k),
-                    format_number(ZakatTracker.unscale(v['rest'])),
-                    format_number(ZakatTracker.unscale(v['capital'])),
+                    Helper.time_to_datetime(k),
+                    format_number(Helper.unscale(v['rest'])),
+                    format_number(Helper.unscale(v['capital'])),
                     format_number(v['count']),
-                    ZakatTracker.time_to_datetime(v['last']) if v['last'] else '-',
-                    format_number(ZakatTracker.unscale(v['total'])),
+                    Helper.time_to_datetime(v['last']) if v['last'] else '-',
+                    format_number(Helper.unscale(v['total'])),
                 )
-                for k,v in sorted(self.db.boxes(account).items(), reverse=True)
+                for k,v in sorted(self.db.db.boxes(account).items(), reverse=True)
                 if keyword in f'{k}{v}'
             ]
             self.boxes_table_last_keyword = keyword
@@ -2616,11 +2608,11 @@ class ZakatLedger(toga.App):
         if self.logs_table_data is None or keyword or self.logs_table_last_keyword:
             self.logs_table_data = [
                 (
-                    ZakatTracker.time_to_datetime(k),
-                    format_number(ZakatTracker.unscale(v['value'])),
+                    Helper.time_to_datetime(k),
+                    format_number(Helper.unscale(v['value'])),
                     v['desc'],
                 )
-                for k,v in sorted(self.db.logs(account).items(), reverse=True)
+                for k,v in sorted(self.db.db.logs(account).items(), reverse=True)
                 if keyword in f'{k}{v}'
             ]
             self.logs_table_last_keyword = keyword
@@ -2638,11 +2630,11 @@ class ZakatLedger(toga.App):
         return chunk
 
     def exchanges_table_items(self, account: str):
-        exchanges = self.db.exchanges()
+        exchanges = self.db.db.exchanges()
         if not account in exchanges:
             exchange = self.db.exchange(account)
             return [(
-                ZakatTracker.time_to_datetime(ZakatTracker.time()),
+                Helper.time(),
                 format_number(exchange['rate']),
                 exchange['description'],
             )]
@@ -2650,12 +2642,12 @@ class ZakatLedger(toga.App):
         if self.exchanges_table_data is None or keyword or self.exchanges_table_last_keyword:
             self.exchanges_table_data = [
                 (
-                    ZakatTracker.time_to_datetime(k),
+                    Helper.time_to_datetime(k),
                     format_number(v['rate']),
                     v['description'],
                 )
                 for k,v in sorted(exchanges[account].items(), reverse=True)
-                if keyword in f'{k}{v}{ZakatTracker.time_to_datetime(k)}'
+                if keyword in f'{k}{v}{Helper.time_to_datetime(k)}'
             ]
             self.exchanges_table_last_keyword = keyword
         chunk, self.exchanges_table_total_pages, self.exchanges_table_total_items = self.paginate(
@@ -2672,8 +2664,9 @@ class ZakatLedger(toga.App):
         return chunk
 
     def accounts_selection_items(self):
+        print(f'[xxx] accounts: {self.db.db.accounts()}')
         return [""] + [
-            f'{k} ({self.db.unscale(v)})' for k,v in sorted(self.db.accounts().items())
+            f'{k} ({Helper.unscale(v)})' for k,v in sorted(self.db.db.accounts().items())
         ]
 
     # helpers
@@ -2717,8 +2710,7 @@ class ZakatLedger(toga.App):
                 print('cancelled')
                 return
             print('confirmed')
-            self.db.free(self.db.lock())
-            self.db.save()
+            self.db.db.save()
             if self.db.load(path):
                 self.refresh(widget)
                 self.main_window.info_dialog(
@@ -2796,7 +2788,7 @@ class ZakatLedger(toga.App):
         print('brief', brief)
         _, _, self.scaled_demand = brief
         print('scaled_demand', self.scaled_demand)
-        self.demand = round(ZakatTracker.unscale(self.scaled_demand), 2)
+        self.demand = round(Helper.unscale(self.scaled_demand), 2)
         print('demand', self.demand)
         self.payment_parts_widgets = {}
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
@@ -2819,8 +2811,8 @@ class ZakatLedger(toga.App):
                     for part in self.zakat_plan[2][account].values():
                         if self.debug:
                             print('part', part)
-                        progress_bar.value = float(progress_bar.value) + ZakatTracker.unscale(part['total'])
-                        number_input.value = float(number_input.value) + ZakatTracker.unscale(part['total'])
+                        progress_bar.value = float(progress_bar.value) + Helper.unscale(part['total'])
+                        number_input.value = float(number_input.value) + Helper.unscale(part['total'])
             self.apply_payment_parts_button.enabled = widget.value
             if widget.value:
                 self.supply = self.demand
@@ -2852,7 +2844,7 @@ class ZakatLedger(toga.App):
         for account, part in self.payment_parts_data['account'].items():
             if self.debug:
                 print(account, part)
-            parts_box.add(self.payment_part_row_widget(widget, account, ZakatTracker.unscale(part['balance']), part['rate']))
+            parts_box.add(self.payment_part_row_widget(widget, account, Helper.unscale(part['balance']), part['rate']))
             parts_box.add(toga.Divider())
         page.add(toga.ScrollContainer(content=parts_box, style=Pack(flex=1, text_direction=self.dir)))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
@@ -3106,7 +3098,7 @@ class ZakatLedger(toga.App):
                     )
                     return
                     
-                self.db.save()
+                self.db.db.save()
                 self.refresh(widget)
                 self.goto_main_page(widget)
                 self.main_window.info_dialog(
@@ -3140,9 +3132,9 @@ class ZakatLedger(toga.App):
             )
             return
         try:
-            self.db.exchange(account, created=ZakatTracker.time(datetime_value), rate=float(rate), description=desc, debug=self.debug)
+            self.db.exchange(account, created=Helper.time(datetime_value), rate=float(rate), description=desc, debug=self.debug)
             self.update_exchanges(widget, account)
-            self.db.save()
+            self.db.db.save()
             self.main_window.content = self.account_tabs
             self.main_window.info_dialog(
                 self.i18n.t('message_status'),
@@ -3170,7 +3162,12 @@ class ZakatLedger(toga.App):
         print(f'datetime_missing: {datetime_missing}')
         print(f'datetime_value: {datetime_value}')
         if new_account:
-            amount = 0
+            self.db.db.account(name=account)
+            self.main_window.info_dialog(
+                self.i18n.t('message_status'),
+                self.i18n.t('operation_accomplished_successfully'),
+            )
+            return
         elif not account or not desc or not amount or datetime_missing:
             self.main_window.error_dialog(
                 self.i18n.t('data_error'),
@@ -3178,11 +3175,12 @@ class ZakatLedger(toga.App):
             )
             return
         try:
+            account_ref, _ = self.db.db.account(name=account)
             if discount:
-                self.db.sub(amount, desc, account, created=ZakatTracker.time(datetime_value))
+                self.db.db.sub(amount, desc, account_ref, created=Helper.time(datetime_value))
             else:
-                self.db.track(amount, desc, account, created=ZakatTracker.time(datetime_value))
-            self.db.save()
+                self.db.db.track(amount, desc, account_ref, created=Helper.time(datetime_value))
+            # self.db.db.save() #!!!
             self.refresh(widget)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
@@ -3222,8 +3220,7 @@ class ZakatLedger(toga.App):
             return
 
         try:
-            self.db.transfer(amount, from_account, to_account, desc, created=ZakatTracker.time(datetime_value))
-            self.db.free(self.db.lock()) # !!! need-revise: update zakat library, it should be auto freed.
+            self.db.db.transfer(amount, from_account, to_account, desc, created=Helper.time(datetime_value))
             self.refresh(widget)
             self.goto_main_page(widget)
             self.main_window.info_dialog(
@@ -3295,7 +3292,7 @@ class ZakatLedger(toga.App):
         return toga.Label(f'* {note} *', style=Pack(flex=1, text_align=self.text_align, text_direction=self.dir, font_size=9))
 
     def account_tab_page_label_widget(self, account):
-        balance = self.db.balance(account, cached=self.config_load_from_cache_when_possible)
+        balance = self.db.db.balance(account, cached=self.config_load_from_cache_when_possible)
         account_label = self.i18n.t('account')
         unit = self.i18n.t('unit')
         page_label = toga.Label(f'{account_label}: {account} = {format_number(balance)} {unit}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
@@ -3414,7 +3411,7 @@ class ZakatLedger(toga.App):
     # transformers
 
     def format_time(self, diff: int):
-        return ZakatTracker.duration_from_nanoseconds(
+        return Helper.duration_from_nanoseconds(
             diff,
             spoken_time_separator = self.i18n.t('spoken_time_separator'),
             millennia = self.i18n.t('millennia'),
