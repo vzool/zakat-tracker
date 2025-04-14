@@ -13,7 +13,7 @@ import toga
 import toga.sources
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
-from zakat import ZakatTracker, Time, Timeline, ZakatReport, ZakatSummary, ZakatPlan, AccountID, Transaction, JSONEncoder
+from zakat import ZakatTracker, Time, Timeline, ZakatReport, ZakatSummary, AccountID, BoxPlan, AccountDetails, Transaction, JSONEncoder
 from datetime import datetime
 from .i18n import i18n, Lang
 from .config import Config
@@ -66,11 +66,12 @@ def strip(text: str) -> str:
 
 class ZakatLedger(toga.App):
 
+    selected_account: AccountDetails
     timeline_data: Timeline
     zakat_report: ZakatReport
     thread_result_zakat_exists: bool
     thread_result_zakat_stats: ZakatSummary
-    thread_result_zakat_plan: ZakatPlan
+    thread_result_zakat_plan: dict[AccountID, list[BoxPlan]]
 
     def startup(self):
         
@@ -324,7 +325,7 @@ class ZakatLedger(toga.App):
                                 self.thread_result_data.append((
                                     Time.time_to_datetime(plan.ref),
                                     plan.log,
-                                    account,
+                                    self.db.name(account),
                                     format_number(ZakatTracker.unscale(plan.box.capital)),
                                     format_number(ZakatTracker.unscale(plan.box.rest)),
                                     format_number(ZakatTracker.unscale(plan.total)),
@@ -1445,9 +1446,9 @@ class ZakatLedger(toga.App):
             )
             print('daily_chart_data', data)
 
-            positive_values = [v[0] for v in [list(self.timeline_data.daily[x].values()) for x in data]]
-            negative_values = [v[1] for v in [list(self.timeline_data.daily[x].values()) for x in data]]
-            total_values = [v[2] for v in [list(self.timeline_data.daily[x].values()) for x in data]]
+            positive_values = [self.timeline_data.daily[x].positive for x in data]
+            negative_values = [self.timeline_data.daily[x].negative for x in data]
+            total_values = [self.timeline_data.daily[x].total for x in data]
 
             bar_width = 0.25
             index = range(len(data))
@@ -1541,9 +1542,9 @@ class ZakatLedger(toga.App):
             )
             print('monthly_chart_data', data)
 
-            positive_values = [v[0] for v in [list(self.timeline_data.monthly[x].values()) for x in data]]
-            negative_values = [v[1] for v in [list(self.timeline_data.monthly[x].values()) for x in data]]
-            total_values = [v[2] for v in [list(self.timeline_data.monthly[x].values()) for x in data]]
+            positive_values = [self.timeline_data.monthly[x].positive for x in data]
+            negative_values = [self.timeline_data.monthly[x].negative for x in data]
+            total_values = [self.timeline_data.monthly[x].total for x in data]
 
             bar_width = 0.25
             index = range(len(data))
@@ -1637,9 +1638,9 @@ class ZakatLedger(toga.App):
             )
             print('yearly_chart_data', data)
 
-            positive_values = [v[0] for v in [list(self.timeline_data.yearly[x].values()) for x in data]]
-            negative_values = [v[1] for v in [list(self.timeline_data.yearly[x].values()) for x in data]]
-            total_values = [v[2] for v in [list(self.timeline_data.yearly[x].values()) for x in data]]
+            positive_values = [self.timeline_data.yearly[x].positive for x in data]
+            negative_values = [self.timeline_data.yearly[x].negative for x in data]
+            total_values = [self.timeline_data.yearly[x].total for x in data]
 
             bar_width = 0.25
             index = range(len(data))
@@ -2127,7 +2128,7 @@ class ZakatLedger(toga.App):
         self.main_window.content = page
 
     def account_tabs_page(self, widget, account):
-        self.title(account)
+        self.title(self.selected_account.account_name)
         tabs = toga.OptionContainer(
             content=[
                 (self.i18n.t('boxes'), self.boxes_page(widget, account), toga.Icon("resources/icon/boxes.png")),
@@ -2567,7 +2568,7 @@ class ZakatLedger(toga.App):
         if self.accounts_table_data is None or keyword or self.accounts_table_last_keyword:
             self.accounts_table_data = [
                 (
-                    account_id,
+                    self.db.name(account_id),
                     format_number(ZakatTracker.unscale(account.balance)),
                     self.db.box_size(account_id),
                     self.db.log_size(account_id),
@@ -2762,9 +2763,10 @@ class ZakatLedger(toga.App):
         print('account_table_on_activate', f'access_key({access_key})')
         if not hasattr(widget.selection, access_key):
             return
-        account = getattr(widget.selection, access_key)
-        print('account_table_on_activate', account)
-        self.account_tabs_page(widget, account)
+        account_name = getattr(widget.selection, access_key)
+        self.selected_account = self.db.account(account_name)
+        print('account_table_on_activate', self.selected_account)
+        self.account_tabs_page(widget, self.selected_account.account_id)
 
     def account_table_on_activate(self, widget, row: toga.sources.list_source.Row):
         pass
@@ -3338,7 +3340,7 @@ class ZakatLedger(toga.App):
         balance = self.db.balance(account, cached=self.config_load_from_cache_when_possible)
         account_label = self.i18n.t('account')
         unit = self.i18n.t('unit')
-        page_label = toga.Label(f'{account_label}: {account} = {format_number(balance)} {unit}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
+        page_label = toga.Label(f'{account_label}: {self.selected_account.account_name} = {format_number(balance)} {unit}', style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         return page_label
 
     def desc_widget(self):
