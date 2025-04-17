@@ -3,6 +3,7 @@
 clean:
 	rm -rf build
 	rm -rf logs
+	rm -rf $$HOME/Library/Application\ Support/net.vzool.zakat-tracker.zakat-tracker/ # macOS
 
 .PHONY: run
 # run application

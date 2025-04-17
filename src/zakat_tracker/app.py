@@ -13,7 +13,19 @@ import toga
 import toga.sources
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
-from zakat import ZakatTracker, Time, Timeline, ZakatReport, ZakatSummary, AccountID, BoxPlan, AccountDetails, Transaction, JSONEncoder
+from zakat import (
+    ZakatTracker,
+    Time,
+    Timeline,
+    ZakatReport,
+    ZakatSummary,
+    AccountID,
+    BoxPlan,
+    AccountDetails,
+    Transaction,
+    JSONEncoder,
+    ImportReport,
+)
 from datetime import datetime
 from .i18n import i18n, Lang
 from .config import Config
@@ -24,6 +36,7 @@ import json
 import asyncio
 import threading
 import dataclasses
+import traceback
 try:
     import toga_chart
     charts_library_missing = False
@@ -174,8 +187,8 @@ class ZakatLedger(toga.App):
                     self.timeline_data = self.db.timeline()
                     self.stats = self.db.stats(ignore_ram=not self.config_calculating_database_stats_on_startup)
                 except Exception as e:
-                    print(e)
-                    self.thread_exception = e
+                    traceback.print_exc()
+                    self.thread_exception = traceback.format_exc()
                 finally:
                     self.thread_done = True
             threading.Thread(target=thread).start()
@@ -336,8 +349,9 @@ class ZakatLedger(toga.App):
                                 ))
 
                     except Exception as e:
+                        traceback.print_exc()
                         print(e)
-                        self.thread_exception = e
+                        self.thread_exception = traceback.format_exc()
                     finally:
                         self.thread_done = True
                 threading.Thread(target=thread).start()
@@ -739,9 +753,10 @@ class ZakatLedger(toga.App):
                 intent.setData(Uri.parse(upload_url))
                 self._impl.start_activity(intent)
             except Exception as e:
+                traceback.print_exc()
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),
-                    str(e),
+                    traceback.format_exc(),
                 )
         open_link_button = toga.Button(self.i18n.t('open_in_web_browser'), on_press=open_link_button_action, style=Pack(flex=1, text_direction=self.dir))
         page.add(open_link_button)
@@ -809,12 +824,25 @@ class ZakatLedger(toga.App):
         self.add_background_task(timer)
         return page
 
-    def csv_bad_records_report_page(self, report):
+    def csv_bad_records_report_page(self, report: ImportReport):
         page = toga.Box(style=Pack(direction=COLUMN, flex=1, text_direction=self.dir))
-        created, found, bad = report
-        data = [(k,)+v for k, v in bad.items()]
+        data = [
+            (
+                v.index,
+                v.account,
+                v.desc,
+                v.value,
+                v.date,
+                v.rate,
+                v.error,
+            ) for v in report.bad
+        ]
         page_label = toga.Label(
-            self.i18n.t('csv_bad_records_report_page_title').format(len(data), created, found),
+            self.i18n.t('csv_bad_records_report_page_title').format(
+                len(data),
+                report.statistics.created,
+                report.statistics.found,
+            ),
             style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir),
         )
         if self.debug:
@@ -882,8 +910,8 @@ class ZakatLedger(toga.App):
                     )
                     self.db.save()
                 except Exception as e:
-                    print(e)
-                    self.thread_exception = e
+                    traceback.print_exc()
+                    self.thread_exception = traceback.format_exc()
                 finally:
                     self.thread_done = True
             threading.Thread(target=thread).start()
@@ -894,8 +922,8 @@ class ZakatLedger(toga.App):
                 await asyncio.sleep(1)
             ############ UI THREAD ############
             #----------------------------------
-            _, _, bad = self.thread_result
-            if self.thread_exception is None and not bad:
+            import_report: ImportReport = self.thread_result
+            if self.thread_exception is None and not import_report.bad:
                 self.refresh(widget)
                 self.main_window.info_dialog(
                     self.i18n.t('message_status'),
@@ -1085,8 +1113,8 @@ class ZakatLedger(toga.App):
                         self.db.load(file_path)
                         self.db.save()
                     except Exception as e:
-                        print(e)
-                        self.thread_exception = e
+                        traceback.print_exc()
+                        self.thread_exception = traceback.format_exc()
                     finally:
                         self.thread_done = True
                 threading.Thread(target=thread).start()
@@ -1169,9 +1197,10 @@ class ZakatLedger(toga.App):
                     )
                     return
             except Exception as e:
+                traceback.print_exc()
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),
-                    str(e),
+                    traceback.format_exc(),
                 ) 
         export_database_file_button = toga.Button(self.i18n.t('export_database_file'), on_press=export_database_file, style=Pack(flex=1, text_align='center', font_weight='bold', font_size=10, text_direction=self.dir))
         back_button = toga.Button(self.i18n.t('back'), on_press=self.goto_main_page, style=Pack(flex=1, text_direction=self.dir))
@@ -3130,9 +3159,10 @@ class ZakatLedger(toga.App):
                     self.i18n.t('operation_accomplished_successfully'),
                 )
             except Exception as e:
+                traceback.print_exc()
                 self.main_window.error_dialog(
                     self.i18n.t('unexpected_error'),
-                    str(e),
+                    traceback.format_exc(),
                 )
         self.main_window.confirm_dialog(
             self.i18n.t('recover_confirm_title'),
@@ -3165,9 +3195,10 @@ class ZakatLedger(toga.App):
                 self.i18n.t('operation_accomplished_successfully'),
             )
         except Exception as e:
+            traceback.print_exc()
             self.main_window.error_dialog(
                 self.i18n.t('unexpected_error'),
-                str(e),
+                traceback.format_exc(),
             )
 
     def save(self, widget):
@@ -3214,9 +3245,10 @@ class ZakatLedger(toga.App):
                 self.i18n.t('operation_accomplished_successfully'),
             )
         except Exception as e:
+            traceback.print_exc()
             self.main_window.error_dialog(
                 self.i18n.t('unexpected_error'),
-                str(e),
+                traceback.format_exc(),
             )
 
     def transfer(self, widget):
@@ -3273,9 +3305,10 @@ class ZakatLedger(toga.App):
                 self.i18n.t('operation_accomplished_successfully'),
             )
         except Exception as e:
+            traceback.print_exc()
             self.main_window.error_dialog(
                 self.i18n.t('unexpected_error'),
-                str(e),
+                traceback.format_exc(),
             )
 
     # values
